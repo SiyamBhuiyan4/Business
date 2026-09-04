@@ -1,0 +1,104 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String                @id @default(uuid())
+  name                String
+  email               String                @unique
+  passwordHash        String
+  role                String                @default("ADMIN") // SUPER_ADMIN, ADMIN
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  
+  businessAccess      AdminBusinessAccess[]
+  permissions         AdminPermission[]
+  createdOrders       Order[]               @relation("CreatedOrders")
+}
+
+model Business {
+  id                  String                @id @default(uuid())
+  name                String
+  slug                String                @unique
+  icon                String                @default("building-2")
+  color               String                @default("emerald")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  products            Product[]
+  orders              Order[]
+  adminAccess         AdminBusinessAccess[]
+  adminPermissions    AdminPermission[]
+}
+
+model Product {
+  id                  String                @id @default(uuid())
+  businessId          String
+  business            Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name                String
+  unitPrice           Float                 // In BDT (৳)
+  sku                 String?
+  isAvailable         Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  orderItems          OrderItem[]
+}
+
+model Order {
+  id                   String               @id @default(uuid())
+  businessId           String
+  business             Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdByUserId      String?
+  createdByUser        User?                @relation("CreatedOrders", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  customerName         String
+  customerContact      String
+  deliveryAddress      String
+  expectedDeliveryDate DateTime
+  status               String               @default("PENDING") // PENDING, IN_PROGRESS, DELIVERED, CANCELLED
+  orderType            String               @default("SINGLE") // SINGLE, MIXED
+  totalAmount          Float                // In BDT (৳)
+  notes                String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  items                OrderItem[]
+}
+
+model OrderItem {
+  id                  String                @id @default(uuid())
+  orderId             String
+  order               Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId           String
+  product             Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity            Int
+  priceAtOrder        Float
+}
+
+model AdminBusinessAccess {
+  id                  String                @id @default(uuid())
+  userId              String
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId          String
+  business            Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt           DateTime              @default(now())
+
+  @@unique([userId, businessId])
+}
+
+model AdminPermission {
+  id                  String                @id @default(uuid())
+  userId              String
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId          String
+  business            Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  permissionKey       String                // e.g., 'orders:view', 'orders:manage', 'sales:view', 'pdf:export'
+  enabled             Boolean               @default(true)
+
+  @@unique([userId, businessId, permissionKey])
+}

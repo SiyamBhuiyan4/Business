@@ -1,0 +1,657 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  ShoppingBag,
+  Filter,
+  Plus,
+  Calendar,
+  User,
+  MapPin,
+  Phone,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Truck,
+  Eye,
+  FileText,
+  Search,
+} from 'lucide-react';
+import { formatCurrency, formatDate, formatDateWithTime } from '@/lib/utils';
+import { format } from 'date-fns';
+
+interface PendingOrdersProps {
+  businessId: string;
+  permissions: Record<string, boolean>;
+  onOrderChange?: () => void;
+}
+
+export default function PendingOrders({ businessId, permissions, onOrderChange }: PendingOrdersProps) {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>('PENDING');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [startDateFilter, setStartDateFilter] = useState('');
+  const [endDateFilter, setEndDateFilter] = useState('');
+  const [createdByFilter, setCreatedByFilter] = useState('ALL');
+
+  // Modals
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Create Form State
+  const [products, setProducts] = useState<any[]>([]);
+  const [customerName, setCustomerName] = useState('');
+  const [customerContact, setCustomerContact] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(
+    format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')
+  );
+  const [orderItems, setOrderItems] = useState<Array<{ productId: string; quantity: number }>>([
+    { productId: '', quantity: 1 },
+  ]);
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const query = new URLSearchParams({ status: statusFilter, orderType: typeFilter });
+      if (startDateFilter) query.set('startDate', startDateFilter);
+      if (endDateFilter) query.set('endDate', endDateFilter);
+      if (createdByFilter !== 'ALL') query.set('createdBy', createdByFilter);
+      const res = await fetch(`/api/businesses/${businessId}/orders?${query}`);
+      const json = await res.json();
+      if (res.ok) {
+        setOrders(json.orders);
+      }
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(`/api/businesses/${businessId}/products`);
+      const json = await res.json();
+      if (res.ok && json.products) {
+        setProducts(json.products);
+        if (json.products.length > 0 && !orderItems[0].productId) {
+          setOrderItems([{ productId: json.products[0].id, quantity: 1 }]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [businessId, statusFilter, typeFilter, startDateFilter, endDateFilter, createdByFilter]);
+
+  useEffect(() => {
+    if (showCreateModal) {
+      fetchProducts();
+    }
+  }, [showCreateModal, businessId]);
+
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/businesses/${businessId}/orders`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: newStatus }),
+      });
+      if (res.ok) {
+        fetchOrders();
+        if (onOrderChange) onOrderChange();
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setSelectedOrder((prev: any) => ({ ...prev, status: newStatus }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to update order status:', err);
+    }
+  };
+
+  const handleEditOrder = async (order: any) => {
+    const customerName = window.prompt('Customer name', order.customerName);
+    if (!customerName?.trim()) return;
+    const customerContact = window.prompt('Customer contact', order.customerContact);
+    const deliveryAddress = window.prompt('Delivery address', order.deliveryAddress);
+    const expectedDeliveryDate = window.prompt('Delivery date and time (YYYY-MM-DDTHH:mm)', new Date(order.expectedDeliveryDate).toISOString().slice(0, 16));
+    if (!customerContact || !deliveryAddress || !expectedDeliveryDate) return;
+    const res = await fetch(`/api/businesses/${businessId}/orders`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order.id, customerName, customerContact, deliveryAddress, expectedDeliveryDate }) });
+    if (res.ok) { fetchOrders(); if (onOrderChange) onOrderChange(); }
+    else alert((await res.json()).error || 'Failed to edit order');
+  };
+
+  const handleDeleteOrder = async (order: any) => {
+    if (!window.confirm(`Delete order for ${order.customerName}? This cannot be undone.`)) return;
+    const res = await fetch(`/api/businesses/${businessId}/orders?orderId=${encodeURIComponent(order.id)}`, { method: 'DELETE' });
+    if (res.ok) { setSelectedOrder(null); fetchOrders(); if (onOrderChange) onOrderChange(); }
+    else alert((await res.json()).error || 'Failed to delete order');
+  };
+
+  const handleAddItemRow = () => {
+    if (products.length > 0) {
+      setOrderItems([...orderItems, { productId: products[0].id, quantity: 1 }]);
+    }
+  };
+
+  const handleRemoveItemRow = (index: number) => {
+    if (orderItems.length > 1) {
+      setOrderItems(orderItems.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleCreateOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName || !customerContact || !deliveryAddress || orderItems.length === 0) {
+      alert('Please fill in all required customer and product details');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/businesses/${businessId}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName,
+          customerContact,
+          deliveryAddress,
+          expectedDeliveryDate,
+          items: orderItems,
+          notes,
+        }),
+      });
+
+      if (res.ok) {
+        setShowCreateModal(false);
+        setCustomerName('');
+        setCustomerContact('');
+        setDeliveryAddress('');
+        setNotes('');
+        fetchOrders();
+        if (onOrderChange) onOrderChange();
+      } else {
+        const json = await res.json();
+        alert(json.error || 'Failed to create order');
+      }
+    } catch (err) {
+      console.error('Create order error:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const filteredOrders = orders.filter((ord) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      ord.customerName.toLowerCase().includes(q) ||
+      ord.customerContact.includes(q) ||
+      ord.deliveryAddress.toLowerCase().includes(q) ||
+      ord.id.toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Header & Control Bar */}
+      <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-emerald-400" />
+            <h2 className="text-lg font-bold text-slate-100">Order Management</h2>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            Orders automatically sorted by <span className="text-emerald-400 font-semibold">Expected Delivery Date (Soonest First)</span>
+          </p>
+        </div>
+
+        {permissions['orders:manage'] && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            Create New Order
+          </button>
+        )}
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-4">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search by customer, contact, or ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Status Tabs */}
+          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+            {['PENDING', 'IN_PROGRESS', 'DELIVERED', 'CANCELLED', 'ALL'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  statusFilter === st
+                    ? 'bg-slate-800 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {st.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+
+          {/* Type Filter */}
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500"
+          >
+            <option value="ALL">All Order Types</option>
+            <option value="SINGLE">Single Product</option>
+            <option value="MIXED">Mixed Order</option>
+          </select>
+          <input type="date" value={startDateFilter} onChange={(e) => setStartDateFilter(e.target.value)} aria-label="Delivery date from" className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2" />
+          <input type="date" value={endDateFilter} onChange={(e) => setEndDateFilter(e.target.value)} aria-label="Delivery date to" className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2" />
+          <select value={createdByFilter} onChange={(e) => setCreatedByFilter(e.target.value)} className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2">
+            <option value="ALL">All creators</option>
+            {Array.from(new Map(orders.filter((o) => o.createdByUser).map((o) => [o.createdByUser.id, o.createdByUser])).values()).map((creator: any) => <option key={creator.id} value={creator.id}>{creator.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Orders List Table */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        {loading ? (
+          <div className="py-16 text-center text-slate-500 text-sm">Loading orders...</div>
+        ) : filteredOrders.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="px-5 py-3.5">Customer / Contact</th>
+                  <th className="px-5 py-3.5">Expected Delivery</th>
+                  <th className="px-5 py-3.5">Order Type</th>
+                  <th className="px-5 py-3.5">Items Summary</th>
+                  <th className="px-5 py-3.5">Total (BDT)</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {filteredOrders.map((ord) => (
+                  <tr
+                    key={ord.id}
+                    className="hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                    onClick={() => setSelectedOrder(ord)}
+                  >
+                    <td className="px-5 py-4">
+                      <div className="font-bold text-slate-100 text-sm">{ord.customerName}</div>
+                      <div className="text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <Phone className="w-3 h-3 text-slate-500" />
+                        {ord.customerContact}
+                      </div>
+                      <div className="text-slate-500 flex items-center gap-1.5 mt-0.5 truncate max-w-[200px]">
+                        <MapPin className="w-3 h-3 text-slate-600" />
+                        {ord.deliveryAddress}
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-1.5 text-slate-200 font-medium">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                        {formatDate(ord.expectedDeliveryDate)}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">
+                        Created: {formatDate(ord.createdAt)}
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[11px] border ${
+                          ord.orderType === 'MIXED'
+                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                            : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                        }`}
+                      >
+                        {ord.orderType === 'MIXED' ? '🔀 Mixed Order' : '📦 Single Product'}
+                      </span>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <div className="text-slate-300 font-medium max-w-[240px] truncate">
+                        {ord.items
+                          .map((i: any) => `${i.product.name} (x${i.quantity})`)
+                          .join(', ')}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        {ord.items.length} item line(s)
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <div className="font-extrabold text-sm text-emerald-400">
+                        {formatCurrency(ord.totalAmount)}
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                      {permissions['orders:status'] ? (
+                        <select
+                          value={ord.status}
+                          onChange={(e) => handleUpdateStatus(ord.id, e.target.value)}
+                          className={`text-xs font-bold rounded-lg px-2.5 py-1 border focus:outline-none cursor-pointer ${
+                            ord.status === 'DELIVERED'
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : ord.status === 'CANCELLED'
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                              : ord.status === 'IN_PROGRESS'
+                              ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                              : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          }`}
+                        >
+                          <option value="PENDING" className="bg-slate-900 text-amber-300">PENDING</option>
+                          <option value="IN_PROGRESS" className="bg-slate-900 text-sky-300">IN PROGRESS</option>
+                          <option value="DELIVERED" className="bg-slate-900 text-emerald-300">DELIVERED</option>
+                          <option value="CANCELLED" className="bg-slate-900 text-rose-300">CANCELLED</option>
+                        </select>
+                      ) : (
+                        <span
+                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                            ord.status === 'DELIVERED'
+                              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                              : ord.status === 'CANCELLED'
+                              ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                              : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                          }`}
+                        >
+                          {ord.status}
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-5 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => setSelectedOrder(ord)}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                        title="View details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      {permissions['orders:manage'] && <>
+                        <button onClick={() => handleEditOrder(ord)} className="ml-1 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300" title="Edit order">Edit</button>
+                        <button onClick={() => handleDeleteOrder(ord)} className="ml-1 p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-rose-400" title="Delete order">Delete</button>
+                      </>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-16 text-center">
+            <ShoppingBag className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+            <h3 className="text-slate-300 font-bold text-sm">No Pending Orders Found</h3>
+            <p className="text-slate-500 text-xs mt-1">Try resetting search filters or create a new order</p>
+          </div>
+        )}
+      </div>
+
+      {/* View Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
+              <div>
+                <span className="text-xs text-slate-500 uppercase tracking-wider font-mono">
+                  Order #{selectedOrder.id.slice(0, 8)}
+                </span>
+                <h3 className="text-base font-bold text-slate-100">{selectedOrder.customerName}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">Contact</span>
+                  <div className="text-xs font-bold text-slate-200 mt-0.5">{selectedOrder.customerContact}</div>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">Expected Delivery</span>
+                  <div className="text-xs font-bold text-emerald-400 mt-0.5">
+                    {formatDate(selectedOrder.expectedDeliveryDate)}
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">Delivery Address</span>
+                  <div className="text-xs text-slate-300 mt-0.5">{selectedOrder.deliveryAddress}</div>
+                </div>
+              </div>
+
+              {/* Items Breakdown */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Ordered Items</h4>
+                <div className="divide-y divide-slate-800 border border-slate-800 rounded-xl overflow-hidden">
+                  {selectedOrder.items.map((item: any) => (
+                    <div key={item.id} className="p-3 bg-slate-950/40 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-semibold text-slate-200">{item.product.name}</div>
+                        <div className="text-[10px] text-slate-500">
+                          {formatCurrency(item.priceAtOrder)} × {item.quantity} units
+                        </div>
+                      </div>
+                      <div className="font-bold text-slate-100">
+                        {formatCurrency(item.priceAtOrder * item.quantity)}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="p-3 bg-slate-900 flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-300">Grand Total</span>
+                    <span className="text-emerald-400 text-sm">{formatCurrency(selectedOrder.totalAmount)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {selectedOrder.notes && (
+                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl text-xs text-amber-300">
+                  <span className="font-bold">Driver Notes:</span> {selectedOrder.notes}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">
+                Created by: {selectedOrder.createdByUser?.name || 'Super Admin'}
+              </span>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs"
+              >
+                Close
+              </button>
+              {permissions['orders:manage'] && <button onClick={() => handleDeleteOrder(selectedOrder)} className="px-4 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-semibold text-xs">Delete</button>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Order Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
+              <h3 className="text-base font-bold text-slate-100">Create New Business Order</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateOrder} className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Customer Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="e.g. Gulshan Super Shop"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Contact Phone *</label>
+                  <input
+                    type="text"
+                    required
+                    value={customerContact}
+                    onChange={(e) => setCustomerContact(e.target.value)}
+                    placeholder="017xxxxxxxx"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Delivery Address *</label>
+                <input
+                  type="text"
+                  required
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="Full street address..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Expected Delivery Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={expectedDeliveryDate}
+                  onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              {/* Items Section */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-300">Order Items</label>
+                  <button
+                    type="button"
+                    onClick={handleAddItemRow}
+                    className="text-xs text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Item Line
+                  </button>
+                </div>
+
+                {orderItems.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <select
+                      value={item.productId}
+                      onChange={(e) => {
+                        const updated = [...orderItems];
+                        updated[idx].productId = e.target.value;
+                        setOrderItems(updated);
+                      }}
+                      className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                    >
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({formatCurrency(p.unitPrice)})
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => {
+                        const updated = [...orderItems];
+                        updated[idx].quantity = parseInt(e.target.value) || 1;
+                        setOrderItems(updated);
+                      }}
+                      className="w-20 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 text-center focus:outline-none"
+                    />
+
+                    {orderItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItemRow(idx)}
+                        className="text-rose-400 hover:text-rose-300 text-xs p-1"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Driver / Special Notes</label>
+                <textarea
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Optional notes for delivery team..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20"
+                >
+                  {submitting ? 'Creating Order...' : 'Submit Order'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
