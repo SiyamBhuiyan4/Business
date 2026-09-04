@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
 
   const pathname = request.nextUrl.pathname;
-  const isAuthPage = pathname === '/login' || pathname === '/vault-3e7d9a1c6f2b8k4m' || pathname === '/admin/login';
+  const isAuthPage = pathname === '/login' || pathname === '/super-admin/login' || pathname === '/admin/login';
 
   if (!token) {
     if (!isAuthPage) {
@@ -36,5 +36,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/vault-3e7d9a1c6f2b8k4m', '/admin/:path*'],
+  matcher: ['/dashboard/:path*', '/login', '/super-admin/login', '/admin/:path*'],
 };
