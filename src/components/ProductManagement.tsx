@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Edit2, Trash2, CheckCircle, XCircle, Tag } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { confirmMutation } from '@/lib/confirmMutation';
 
 interface ProductManagementProps {
   businessId: string;
@@ -73,11 +74,12 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
   };
 
   const handleToggleAvailability = async (productId: string, currentStatus: boolean) => {
+    const approval = await confirmMutation(`You are about to change product availability.`); if (!approval) return;
     try {
       const res = await fetch(`/api/businesses/${businessId}/products`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, isAvailable: !currentStatus }),
+        body: JSON.stringify({ productId, isAvailable: !currentStatus, ...approval }),
       });
       if (res.ok) {
         fetchProducts();
@@ -88,10 +90,10 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    const approval = await confirmMutation(`You are about to delete this product. This cannot be undone.`); if (!approval) return;
     try {
       const res = await fetch(`/api/businesses/${businessId}/products?productId=${productId}`, {
-        method: 'DELETE',
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(approval),
       });
       if (res.ok) {
         fetchProducts();

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { confirmMutation } from '@/lib/confirmMutation';
 import {
   ShoppingBag,
   Filter,
@@ -102,11 +103,12 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
   }, [showCreateModal, businessId]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    const approval = await confirmMutation(`You are about to update order status to ${newStatus}.`); if (!approval) return;
     try {
       const res = await fetch(`/api/businesses/${businessId}/orders`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status: newStatus }),
+        body: JSON.stringify({ orderId, status: newStatus, ...approval }),
       });
       if (res.ok) {
         fetchOrders();
@@ -127,14 +129,15 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
     const deliveryAddress = window.prompt('Delivery address', order.deliveryAddress);
     const expectedDeliveryDate = window.prompt('Delivery date and time (YYYY-MM-DDTHH:mm)', new Date(order.expectedDeliveryDate).toISOString().slice(0, 16));
     if (!customerContact || !deliveryAddress || !expectedDeliveryDate) return;
-    const res = await fetch(`/api/businesses/${businessId}/orders`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order.id, customerName, customerContact, deliveryAddress, expectedDeliveryDate }) });
+    const approval = await confirmMutation(`You are about to update order ${order.id}.`); if (!approval) return;
+    const res = await fetch(`/api/businesses/${businessId}/orders`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order.id, customerName, customerContact, deliveryAddress, expectedDeliveryDate, ...approval }) });
     if (res.ok) { fetchOrders(); if (onOrderChange) onOrderChange(); }
     else alert((await res.json()).error || 'Failed to edit order');
   };
 
   const handleDeleteOrder = async (order: any) => {
-    if (!window.confirm(`Delete order for ${order.customerName}? This cannot be undone.`)) return;
-    const res = await fetch(`/api/businesses/${businessId}/orders?orderId=${encodeURIComponent(order.id)}`, { method: 'DELETE' });
+    const approval = await confirmMutation(`You are about to delete order for ${order.customerName}. This cannot be undone.`); if (!approval) return;
+    const res = await fetch(`/api/businesses/${businessId}/orders?orderId=${encodeURIComponent(order.id)}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(approval) });
     if (res.ok) { setSelectedOrder(null); fetchOrders(); if (onOrderChange) onOrderChange(); }
     else alert((await res.json()).error || 'Failed to delete order');
   };
