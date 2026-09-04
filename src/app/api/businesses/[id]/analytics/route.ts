@@ -3,6 +3,8 @@ import { getSessionUser, checkUserBusinessPermission } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { format, subDays, eachDayOfInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }

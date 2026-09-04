@@ -3,6 +3,8 @@ import { getSessionUser, hashPassword } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { PERMISSION_LIST } from '@/lib/permissions';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const user = await getSessionUser();
   if (!user || user.role !== 'SUPER_ADMIN') {

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 async function requireSuperAdmin() {
   const user = await getSessionUser();
   return user?.role === 'SUPER_ADMIN' ? user : null;

@@ -3,9 +3,11 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { prisma } from './prisma';
 
-const jwtSecret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'local-development-only-secret-change-me');
-if (!jwtSecret) throw new Error('JWT_SECRET must be set in production');
-const JWT_SECRET = new TextEncoder().encode(jwtSecret);
+function getJwtSecret(): Uint8Array {
+  const jwtSecret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'local-development-only-secret-change-me');
+  if (!jwtSecret) throw new Error('JWT_SECRET must be set in production');
+  return new TextEncoder().encode(jwtSecret);
+}
 
 export interface JWTPayload {
   userId: string;
@@ -27,12 +29,12 @@ export async function signToken(payload: JWTPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    const verified = await jwtVerify(token, JWT_SECRET);
+    const verified = await jwtVerify(token, getJwtSecret());
     return verified.payload as unknown as JWTPayload;
   } catch (error) {
     return null;
