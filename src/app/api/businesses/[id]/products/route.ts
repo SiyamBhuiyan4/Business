@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSessionUser, checkUserBusinessPermission } from '@/lib/auth';
+import { getSessionUser, checkUserBusinessPermission, verifyMutationApproval } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -65,7 +65,9 @@ export async function PUT(
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
-    const { productId, name, unitPrice, sku, isAvailable } = await request.json();
+    const body = await request.json();
+    const { productId, name, unitPrice, sku, isAvailable } = body;
+    if (!(await verifyMutationApproval(body.confirmationPhrase, body.superAdminPassword))) return NextResponse.json({ error: 'Super Admin approval required' }, { status: 403 });
     if (!productId) return NextResponse.json({ error: 'productId is required' }, { status: 400 });
 
     const existingProduct = await prisma.product.findFirst({ where: { id: productId, businessId: params.id } });
@@ -98,6 +100,8 @@ export async function DELETE(
 
   const { searchParams } = new URL(request.url);
   const productId = searchParams.get('productId');
+  const body = await request.json().catch(() => ({}));
+  if (!(await verifyMutationApproval(body.confirmationPhrase, body.superAdminPassword))) return NextResponse.json({ error: 'Super Admin approval required' }, { status: 403 });
 
   if (!productId) return NextResponse.json({ error: 'productId query param required' }, { status: 400 });
 

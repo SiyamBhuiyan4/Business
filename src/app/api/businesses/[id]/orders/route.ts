@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSessionUser, checkUserBusinessPermission } from '@/lib/auth';
+import { getSessionUser, checkUserBusinessPermission, verifyMutationApproval } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -162,7 +162,9 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { orderId, status, notes, customerName, customerContact, deliveryAddress, expectedDeliveryDate, items } = await request.json();
+    const body = await request.json();
+    const { orderId, status, notes, customerName, customerContact, deliveryAddress, expectedDeliveryDate, items } = body;
+    if (!(await verifyMutationApproval(body.confirmationPhrase, body.superAdminPassword))) return NextResponse.json({ error: 'Super Admin approval required' }, { status: 403 });
     if (!orderId) return NextResponse.json({ error: 'orderId is required' }, { status: 400 });
 
     if (status) {
@@ -232,6 +234,8 @@ export async function DELETE(
 
   const { searchParams } = new URL(request.url);
   const orderId = searchParams.get('orderId');
+  const body = await request.json().catch(() => ({}));
+  if (!(await verifyMutationApproval(body.confirmationPhrase, body.superAdminPassword))) return NextResponse.json({ error: 'Super Admin approval required' }, { status: 403 });
 
   if (!orderId) return NextResponse.json({ error: 'orderId param required' }, { status: 400 });
 

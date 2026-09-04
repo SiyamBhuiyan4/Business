@@ -24,6 +24,12 @@ export async function comparePassword(password: string, hash: string): Promise<b
   return bcrypt.compare(password, hash);
 }
 
+export async function verifyMutationApproval(phrase: unknown, password: unknown) {
+  if (phrase !== 'YES I WANT TO DO IT' || typeof password !== 'string' || !password) return false;
+  const owner = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' }, select: { passwordHash: true } });
+  return !!owner && comparePassword(password, owner.passwordHash);
+}
+
 export async function signToken(payload: JWTPayload): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
