@@ -583,20 +583,8 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
 
                 {orderItems.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-3">
-                    <select
-                      value={item.productId || '__custom__'}
-                      onChange={(e) => {
-                        const updated = [...orderItems];
-                        if (e.target.value === '__custom__') { updated[idx].productId = ''; updated[idx].productName = ''; updated[idx].priceAtOrder = 0; }
-                        else { const product = products.find((p) => p.id === e.target.value); updated[idx].productId = e.target.value; updated[idx].productName = product?.name; updated[idx].priceAtOrder = product?.unitPrice; }
-                        setOrderItems(updated);
-                      }}
-                      className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="__custom__">Other / Custom Item</option>
-                      {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({formatCurrency(p.unitPrice)})</option>)}
-                    </select>
-                    {!item.productId && <div className="flex flex-1 gap-2"><input required value={item.productName || ''} onChange={(e) => { const updated = [...orderItems]; updated[idx].productName = e.target.value; setOrderItems(updated); }} placeholder="Item Name" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200" /><input required type="number" min="0.01" step="0.01" value={item.priceAtOrder || ''} onChange={(e) => { const updated = [...orderItems]; updated[idx].priceAtOrder = parseFloat(e.target.value) || 0; setOrderItems(updated); }} placeholder="Unit Price (৳)" className="w-32 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200" /></div>}
+                    <input required value={item.productName || ''} onChange={(e) => { const updated = [...orderItems]; updated[idx].productId = ''; updated[idx].productName = e.target.value; setOrderItems(updated); }} placeholder="Item Name" className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200" />
+                    <input required type="number" min="0.01" step="0.01" value={item.priceAtOrder || ''} onChange={(e) => { const updated = [...orderItems]; updated[idx].priceAtOrder = parseFloat(e.target.value) || 0; setOrderItems(updated); }} placeholder="Unit Price (৳)" className="w-32 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200" />
 
                     <input
                       type="number"
