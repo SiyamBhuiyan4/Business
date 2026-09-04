@@ -7,7 +7,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000/super-admin/login` for the Super Admin interface, or `http://localhost:3000/admin/login` for the limited Admin interface.
+Open `http://localhost:3000/admin/login` for the Admin interface.
 
 The SQLite development database, including sample Mushroom and Potato data, is included at `prisma/dev.db`. To reset it, run `npm run db:seed`.
 
