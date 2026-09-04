@@ -100,7 +100,7 @@ export async function POST(
 
     for (const item of items) {
       let prod = item.productId ? await prisma.product.findFirst({ where: { id: item.productId, businessId: params.id } }) : null;
-      if (!prod && item.productName) {
+      if (!prod && item.productName && parseFloat(item.priceAtOrder) > 0) {
         prod = await prisma.product.create({ data: { businessId: params.id, name: item.productName.trim(), unitPrice: parseFloat(item.priceAtOrder) || 0 } });
       }
       if (!prod) {
