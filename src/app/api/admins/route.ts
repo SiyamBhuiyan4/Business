@@ -92,3 +92,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create admin' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const user = await getSessionUser();
+  if (!user || user.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Only Super Admin can delete admin accounts' }, { status: 403 });
+  const id = new URL(request.url).searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'Admin id is required' }, { status: 400 });
+  const target = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+  if (!target || target.role !== 'ADMIN') return NextResponse.json({ error: 'Only normal admin accounts can be deleted' }, { status: 400 });
+  await prisma.user.delete({ where: { id } });
+  return NextResponse.json({ success: true });
+}

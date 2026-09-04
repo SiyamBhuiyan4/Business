@@ -30,8 +30,8 @@ export async function GET(
   const orders = await prisma.order.findMany({
     where: {
       businessId: params.id,
-      status: { not: 'CANCELLED' },
-      createdAt: {
+      status: 'DELIVERED',
+      deliveredAt: {
         gte: rangeStart,
         lte: rangeEnd,
       },
@@ -57,7 +57,7 @@ export async function GET(
     const dayDisplay = format(day, 'MMM dd');
 
     const dayOrders = orders.filter(
-      (o) => format(new Date(o.createdAt), 'yyyy-MM-dd') === dayStr
+      (o) => o.deliveredAt && format(new Date(o.deliveredAt), 'yyyy-MM-dd') === dayStr
     );
 
     const revenue = dayOrders.reduce((sum, o) => sum + o.totalAmount, 0);
@@ -93,8 +93,8 @@ export async function GET(
   const heatmapOrders = await prisma.order.findMany({
     where: {
       businessId: params.id,
-      status: { not: 'CANCELLED' },
-      createdAt: {
+      status: 'DELIVERED',
+      deliveredAt: {
         gte: startOfDay(heatmapStart),
         lte: rangeEnd,
       },
@@ -105,7 +105,7 @@ export async function GET(
   const heatmapData = heatmapInterval.map((day) => {
     const dayStr = format(day, 'yyyy-MM-dd');
     const dayOrders = heatmapOrders.filter(
-      (o) => format(new Date(o.createdAt), 'yyyy-MM-dd') === dayStr
+      (o) => o.deliveredAt && format(new Date(o.deliveredAt), 'yyyy-MM-dd') === dayStr
     );
 
     const revenue = dayOrders.reduce((sum, o) => sum + o.totalAmount, 0);

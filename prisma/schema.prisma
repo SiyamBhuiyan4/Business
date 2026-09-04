@@ -61,6 +61,7 @@ model Order {
   deliveryAddress      String
   expectedDeliveryDate DateTime
   status               String               @default("PENDING") // PENDING, IN_PROGRESS, DELIVERED, CANCELLED
+  deliveredAt          DateTime?
   orderType            String               @default("SINGLE") // SINGLE, MIXED
   totalAmount          Float                // In BDT (৳)
   notes                String?

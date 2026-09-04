@@ -182,7 +182,10 @@ export async function PUT(
     if (!existingOrder) return NextResponse.json({ error: 'Order not found in this business' }, { status: 404 });
 
     const updateData: any = {};
-    if (status) updateData.status = status;
+    if (status) {
+      updateData.status = status;
+      updateData.deliveredAt = status === 'DELIVERED' ? (existingOrder.deliveredAt || new Date()) : null;
+    }
     if (notes !== undefined) updateData.notes = notes;
     if (customerName !== undefined) updateData.customerName = customerName.trim();
     if (customerContact !== undefined) updateData.customerContact = customerContact.trim();
