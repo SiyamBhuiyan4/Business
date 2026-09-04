@@ -52,8 +52,8 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(
     format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')
   );
-  const [orderItems, setOrderItems] = useState<Array<{ productId: string; quantity: number }>>([
-    { productId: '', quantity: 1 },
+  const [orderItems, setOrderItems] = useState<Array<{ productId: string; productName?: string; priceAtOrder?: number; quantity: number }>>([
+    { productId: '', productName: '', priceAtOrder: 0, quantity: 1 },
   ]);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -583,21 +583,20 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
 
                 {orderItems.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-3">
-                    <select
-                      value={item.productId}
+                    <input
+                      value={item.productName || products.find((p) => p.id === item.productId)?.name || ''}
                       onChange={(e) => {
                         const updated = [...orderItems];
-                        updated[idx].productId = e.target.value;
+                        updated[idx].productId = '';
+                        updated[idx].productName = e.target.value;
                         setOrderItems(updated);
                       }}
+                      placeholder="Product name"
+                      list={`products-${idx}`}
                       className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                    >
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({formatCurrency(p.unitPrice)})
-                        </option>
-                      ))}
-                    </select>
+                    />
+                    <datalist id={`products-${idx}`}>{products.map((p) => <option key={p.id} value={p.name} />)}</datalist>
+                    <input type="number" min="0" step="0.01" value={item.priceAtOrder || ''} onChange={(e) => { const updated = [...orderItems]; updated[idx].priceAtOrder = parseFloat(e.target.value) || 0; setOrderItems(updated); }} placeholder="Price" className="w-24 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200" />
 
                     <input
                       type="number"

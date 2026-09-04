@@ -99,7 +99,10 @@ export async function POST(
     const itemData: { productId: string; quantity: number; priceAtOrder: number }[] = [];
 
     for (const item of items) {
-      const prod = await prisma.product.findFirst({ where: { id: item.productId, businessId: params.id } });
+      let prod = item.productId ? await prisma.product.findFirst({ where: { id: item.productId, businessId: params.id } }) : null;
+      if (!prod && item.productName) {
+        prod = await prisma.product.create({ data: { businessId: params.id, name: item.productName.trim(), unitPrice: parseFloat(item.priceAtOrder) || 0 } });
+      }
       if (!prod) {
         return NextResponse.json({ error: 'Every product must belong to this business' }, { status: 400 });
       }
