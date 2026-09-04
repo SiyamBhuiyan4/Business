@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
-
 export default function RootPage() {
-  redirect('/dashboard');
+  return <main className="min-h-screen bg-[#0b0f19] flex items-center justify-center p-4 text-slate-100"><div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center shadow-2xl"><p className="text-xs font-bold uppercase tracking-widest text-emerald-400">BizHub</p><h1 className="mt-2 text-3xl font-black">Business Dashboard</h1><p className="mt-3 text-sm text-slate-400">Choose the portal assigned to your account.</p><div className="mt-7 grid gap-3"><a href="/super-admin/login" className="rounded-xl bg-purple-500 px-4 py-3 text-xs font-black text-slate-950">Super Admin Login</a><a href="/admin/login" className="rounded-xl bg-emerald-500 px-4 py-3 text-xs font-black text-slate-950">Admin Login</a></div></div></main>;
 }

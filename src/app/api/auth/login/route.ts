@@ -24,8 +24,8 @@ export async function POST(request: Request) {
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
-    if (loginAs === 'ADMIN' && user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'This is a Super Admin account. Use the Super Admin login.' }, { status: 403 });
+    if ((loginAs !== 'ADMIN' && loginAs !== 'SUPER_ADMIN') || user.role !== loginAs) {
+      return NextResponse.json({ error: 'This login is not valid for your account type.' }, { status: 403 });
     }
 
     const token = await signToken({

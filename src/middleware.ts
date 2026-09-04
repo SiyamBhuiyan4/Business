@@ -9,11 +9,11 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
 
   const pathname = request.nextUrl.pathname;
-  const isAuthPage = pathname === '/login' || pathname === '/admin/login';
+  const isAuthPage = pathname === '/login' || pathname === '/super-admin/login' || pathname === '/admin/login';
 
   if (!token) {
     if (!isAuthPage) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL('/super-admin/login', request.url));
     }
     return NextResponse.next();
   }
@@ -29,12 +29,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch (error) {
     if (!isAuthPage) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL('/super-admin/login', request.url));
     }
     return NextResponse.next();
   }
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/admin/:path*'],
+  matcher: ['/dashboard/:path*', '/login', '/super-admin/:path*', '/admin/:path*'],
 };

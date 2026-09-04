@@ -31,7 +31,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push(user?.role === 'ADMIN' ? '/admin/login' : '/login');
+    router.push(user?.role === 'ADMIN' ? '/admin/login' : '/super-admin/login');
     router.refresh();
   };
 

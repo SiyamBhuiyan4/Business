@@ -14,7 +14,6 @@ export default function AdminLoginPage() {
     const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, loginAs: 'ADMIN' }) });
     const data = await response.json(); setLoading(false);
     if (!response.ok) return setError(data.error || 'Unable to sign in');
-    if (data.user.role !== 'ADMIN') return setError('Please use the Super Admin login for this account.');
     router.push('/admin/dashboard'); router.refresh();
   }
   return <main className="min-h-screen bg-[#0b0f19] flex items-center justify-center p-4">
@@ -24,7 +23,7 @@ export default function AdminLoginPage() {
       <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Admin email" className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-sm text-white" />
       <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-sm text-white" />
       <button disabled={loading} className="w-full rounded-xl bg-emerald-500 py-3 text-xs font-black text-slate-950">{loading ? 'Signing in...' : 'Sign In to Admin Workspace'}</button>
-      <a href="/login" className="block text-center text-xs text-slate-400 hover:text-white">Super Admin sign in</a>
+      <a href="/super-admin/login" className="block text-center text-xs text-slate-400 hover:text-white">Super Admin sign in</a>
     </form>
   </main>;
 }

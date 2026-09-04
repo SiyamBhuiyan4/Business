@@ -284,14 +284,6 @@ async function main() {
   }
 
   console.log('✅ Seeding complete!');
-  console.log('------------------------------------------------');
-  console.log('SUPER ADMIN CREDENTIALS:');
-  console.log('Email: myempire.rise');
-  console.log('Password: Siy@m@123');
-  console.log('------------------------------------------------');
-  console.log('SAMPLE ADMIN CREDENTIALS:');
-  console.log('Mushroom Admin: mushroom.admin@example.com / Admin@123');
-  console.log('------------------------------------------------');
 }
 
 main()
