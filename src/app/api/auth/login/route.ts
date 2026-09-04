@@ -17,12 +17,12 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid username/email or password' }, { status: 401 });
     }
 
     const isValid = await comparePassword(password, user.passwordHash);
     if (!isValid) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid username/email or password' }, { status: 401 });
     }
     if ((loginAs !== 'ADMIN' && loginAs !== 'SUPER_ADMIN') || user.role !== loginAs) {
       return NextResponse.json({ error: 'This login is not valid for your account type.' }, { status: 403 });
