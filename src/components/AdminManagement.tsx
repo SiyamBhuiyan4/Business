@@ -202,7 +202,7 @@ export default function AdminManagement() {
 
               {/* Per Business Permissions Breakdown */}
               <div className="space-y-4">
-                {businesses.map((biz) => {
+                {selectedAdmin?.id === adm.id && businesses.map((biz) => {
                   const isAssigned = adm.businessAccess.some((ba: any) => ba.businessId === biz.id);
 
                   // Extract permission values
