@@ -15,22 +15,39 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { Calendar, TrendingUp, ShoppingBag, DollarSign, RefreshCw } from 'lucide-react';
+import { Calendar, TrendingUp, ShoppingBag, DollarSign, RefreshCw, Wallet, Pencil } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { format, subDays } from 'date-fns';
 
 interface SalesAnalyticsProps {
   businessId: string;
+  investment?: number;
+  canManageInvestment?: boolean;
+  onInvestmentUpdated?: (value: number) => void;
 }
 
 const COLORS = ['#10b981', '#f59e0b', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4'];
 
-export default function SalesAnalytics({ businessId }: SalesAnalyticsProps) {
+export default function SalesAnalytics({ businessId, investment = 0, canManageInvestment = false, onInvestmentUpdated }: SalesAnalyticsProps) {
   const [rangePreset, setRangePreset] = useState<'7d' | '30d' | 'custom'>('7d');
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 6), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const [savingInvestment, setSavingInvestment] = useState(false);
+
+  const editInvestment = async () => {
+    const raw = window.prompt('Total invested amount (BDT)', String(investment));
+    if (raw === null) return;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) return alert('Enter a valid non-negative amount.');
+    setSavingInvestment(true);
+    try {
+      const res = await fetch(`/api/businesses/${businessId}/investment`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ investment: value }) });
+      if (!res.ok) { const json = await res.json(); throw new Error(json.error || 'Unable to update investment'); }
+      onInvestmentUpdated?.(value);
+    } catch (error: any) { alert(error.message); } finally { setSavingInvestment(false); }
+  };
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -140,7 +157,13 @@ export default function SalesAnalytics({ businessId }: SalesAnalyticsProps) {
       </div>
 
       {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-5 rounded-2xl shadow-xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl" />
+          <div className="flex items-center justify-between"><span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Invested</span><div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center"><Wallet className="w-5 h-5" /></div></div>
+          <div className="mt-3 flex items-center gap-2"><div className="text-2xl lg:text-3xl font-extrabold text-white">{formatCurrency(investment)}</div>{canManageInvestment && <button onClick={editInvestment} disabled={savingInvestment} title="Edit total invested" className="p-1.5 rounded-lg text-cyan-300 hover:bg-cyan-500/20"><Pencil className="w-4 h-4" /></button>}</div>
+          <div className="text-xs text-cyan-400 mt-1 font-medium">Business investment (BDT)</div>
+        </div>
         <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-5 rounded-2xl shadow-xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
           <div className="flex items-center justify-between">

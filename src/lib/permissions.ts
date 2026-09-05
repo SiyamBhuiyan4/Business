@@ -31,6 +31,12 @@ export const PERMISSION_LIST: PermissionDefinition[] = [
     defaultForAdmin: true,
   },
   {
+    key: 'investment:manage',
+    label: 'Manage Total Invested',
+    description: 'Can edit the total invested amount for this business',
+    defaultForAdmin: false,
+  },
+  {
     key: 'pdf:export',
     label: 'Export Delivery PDF',
     description: 'Can download delivery sheet PDFs for orders',

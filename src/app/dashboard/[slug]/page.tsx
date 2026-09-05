@@ -66,6 +66,7 @@ export default function BusinessDashboardPage() {
       if (uJson.user.role === 'SUPER_ADMIN') {
         const fullPerms: Record<string, boolean> = {
           'sales:view': true,
+          'investment:manage': true,
           'orders:view': true,
           'orders:manage': true,
           'orders:status': true,
@@ -237,7 +238,7 @@ export default function BusinessDashboardPage() {
         {/* Tab Contents */}
         <div className="pt-2">
           {activeTab === 'analytics' && permissions['sales:view'] && (
-            <SalesAnalytics businessId={currentBusiness.id} />
+            <SalesAnalytics businessId={currentBusiness.id} investment={currentBusiness.investment} canManageInvestment={!!permissions['investment:manage']} onInvestmentUpdated={(investment) => setCurrentBusiness((b: any) => ({ ...b, investment }))} />
           )}
 
           {activeTab === 'heatmap' && permissions['sales:view'] && (
