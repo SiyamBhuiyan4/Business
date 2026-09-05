@@ -34,10 +34,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('PENDING');
-  const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [startDateFilter, setStartDateFilter] = useState('');
-  const [endDateFilter, setEndDateFilter] = useState('');
   const [createdByFilter, setCreatedByFilter] = useState('ALL');
 
   // Modals
@@ -61,9 +58,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const query = new URLSearchParams({ status: statusFilter, orderType: typeFilter });
-      if (startDateFilter) query.set('startDate', startDateFilter);
-      if (endDateFilter) query.set('endDate', endDateFilter);
+      const query = new URLSearchParams({ status: statusFilter });
       if (createdByFilter !== 'ALL') query.set('createdBy', createdByFilter);
       const res = await fetch(`/api/businesses/${businessId}/orders?${query}`);
       const json = await res.json();
@@ -91,7 +86,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
 
   useEffect(() => {
     fetchOrders();
-  }, [businessId, statusFilter, typeFilter, startDateFilter, endDateFilter, createdByFilter]);
+  }, [businessId, statusFilter, createdByFilter]);
 
   useEffect(() => {
     if (showCreateModal) {
@@ -260,18 +255,6 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
             ))}
           </div>
 
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500"
-          >
-            <option value="ALL">All Order Types</option>
-            <option value="SINGLE">Single Product</option>
-            <option value="MIXED">Mixed Order</option>
-          </select>
-          <input type="date" value={startDateFilter} onChange={(e) => setStartDateFilter(e.target.value)} aria-label="Delivery date from" className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2" />
-          <input type="date" value={endDateFilter} onChange={(e) => setEndDateFilter(e.target.value)} aria-label="Delivery date to" className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2" />
           <select value={createdByFilter} onChange={(e) => setCreatedByFilter(e.target.value)} className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2">
             <option value="ALL">All creators</option>
             {Array.from(new Map(orders.filter((o) => o.createdByUser).map((o) => [o.createdByUser.id, o.createdByUser])).values()).map((creator: any) => <option key={creator.id} value={creator.id}>{creator.name}</option>)}
@@ -290,7 +273,6 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                 <tr>
                   <th className="px-5 py-3.5">Customer / Contact</th>
                   <th className="px-5 py-3.5">Expected Delivery</th>
-                  <th className="px-5 py-3.5">Order Type</th>
                   <th className="px-5 py-3.5">Items Summary</th>
                   <th className="px-5 py-3.5">Total (BDT)</th>
                   <th className="px-5 py-3.5">Status</th>
@@ -324,18 +306,6 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                       <div className="text-[10px] text-slate-500 mt-0.5">
                         Created: {formatDate(ord.createdAt)} · {new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} by {ord.createdByUser?.name || 'Unknown'}
                       </div>
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[11px] border ${
-                          ord.orderType === 'MIXED'
-                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-                            : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                        }`}
-                      >
-                        {ord.orderType === 'MIXED' ? '🔀 Mixed Order' : '📦 Single Product'}
-                      </span>
                     </td>
 
                     <td className="px-5 py-4">
