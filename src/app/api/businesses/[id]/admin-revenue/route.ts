@@ -22,7 +22,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   if (!access.allowed) return NextResponse.json({ error: 'Missing permission to manage admin revenue' }, { status: 403 });
   const { adminId, amount } = await request.json();
   const value = Number(amount);
-  if (!adminId || !Number.isFinite(value) || value < 0) return NextResponse.json({ error: 'Admin and a non-negative amount are required' }, { status: 400 });
+  if (!adminId || !Number.isFinite(value)) return NextResponse.json({ error: 'Admin and a valid amount are required' }, { status: 400 });
   const assigned = await prisma.adminBusinessAccess.findUnique({ where: { userId_businessId: { userId: adminId, businessId: params.id } } });
   if (!assigned) return NextResponse.json({ error: 'Admin is not assigned to this business' }, { status: 404 });
   const balance = await prisma.adminRevenueBalance.upsert({ where: { userId_businessId: { userId: adminId, businessId: params.id } }, create: { userId: adminId, businessId: params.id, amount: value }, update: { amount: value } });
