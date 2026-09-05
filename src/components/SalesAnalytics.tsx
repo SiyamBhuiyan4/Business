@@ -15,7 +15,7 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { Calendar, TrendingUp, ShoppingBag, DollarSign, RefreshCw, Wallet, Pencil } from 'lucide-react';
+import { Calendar, TrendingUp, ShoppingBag, DollarSign, RefreshCw, Wallet, Pencil, X, Users } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { format, subDays } from 'date-fns';
 
@@ -23,18 +23,44 @@ interface SalesAnalyticsProps {
   businessId: string;
   investment?: number;
   canManageInvestment?: boolean;
+  canManageRevenue?: boolean;
   onInvestmentUpdated?: (value: number) => void;
 }
 
 const COLORS = ['#10b981', '#f59e0b', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4'];
 
-export default function SalesAnalytics({ businessId, investment = 0, canManageInvestment = false, onInvestmentUpdated }: SalesAnalyticsProps) {
+export default function SalesAnalytics({ businessId, investment = 0, canManageInvestment = false, canManageRevenue = false, onInvestmentUpdated }: SalesAnalyticsProps) {
   const [rangePreset, setRangePreset] = useState<'7d' | '30d' | 'custom'>('7d');
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 6), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [savingInvestment, setSavingInvestment] = useState(false);
+  const [showRevenue, setShowRevenue] = useState(false);
+  const [revenueAdmins, setRevenueAdmins] = useState<any[]>([]);
+  const [loadingRevenue, setLoadingRevenue] = useState(false);
+
+  const openRevenueBreakdown = async () => {
+    setShowRevenue(true);
+    setLoadingRevenue(true);
+    try {
+      const res = await fetch(`/api/businesses/${businessId}/admin-revenue`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Unable to load admin revenue');
+      setRevenueAdmins(json.admins);
+    } catch (error: any) { alert(error.message); setShowRevenue(false); } finally { setLoadingRevenue(false); }
+  };
+
+  const editAdminRevenue = async (admin: any) => {
+    const raw = window.prompt(`Revenue held by ${admin.name} (BDT)`, String(admin.amount));
+    if (raw === null) return;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < 0) return alert('Enter a valid non-negative amount.');
+    const res = await fetch(`/api/businesses/${businessId}/admin-revenue`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: admin.id, amount }) });
+    const json = await res.json();
+    if (!res.ok) return alert(json.error || 'Unable to update admin revenue');
+    setRevenueAdmins((items) => items.map((item) => item.id === admin.id ? { ...item, amount: json.amount } : item));
+  };
 
   const editInvestment = async () => {
     const raw = window.prompt('Total invested amount (BDT)', String(investment));
@@ -164,7 +190,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
           <div className="mt-3 flex items-center gap-2"><div className="text-2xl lg:text-3xl font-extrabold text-white">{formatCurrency(investment)}</div>{canManageInvestment && <button onClick={editInvestment} disabled={savingInvestment} title="Edit total invested" className="p-1.5 rounded-lg text-cyan-300 hover:bg-cyan-500/20"><Pencil className="w-4 h-4" /></button>}</div>
           <div className="text-xs text-cyan-400 mt-1 font-medium">Business investment (BDT)</div>
         </div>
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-5 rounded-2xl shadow-xl relative overflow-hidden group">
+        <button type="button" onClick={openRevenueBreakdown} className="text-left bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 hover:border-emerald-500/50 p-5 rounded-2xl shadow-xl relative overflow-hidden group transition-colors">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Sales Revenue</span>
@@ -180,7 +206,8 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
               Selected Period Revenue (BDT)
             </div>
           </div>
-        </div>
+          <span className="absolute bottom-4 right-4 text-[10px] font-semibold text-slate-500 group-hover:text-emerald-400">Click to view admins</span>
+        </button>
 
         <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-5 rounded-2xl shadow-xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all" />
@@ -218,6 +245,25 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
           </div>
         </div>
       </div>
+
+      {showRevenue && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" onClick={() => setShowRevenue(false)}>
+          <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-800 p-5">
+              <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400"><Users className="h-5 w-5" /></div><div><h3 className="font-bold text-white">Admin Revenue Breakdown</h3><p className="text-xs text-slate-400">Revenue currently held by each assigned admin</p></div></div>
+              <button onClick={() => setShowRevenue(false)} title="Close" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto p-5">
+              {loadingRevenue ? <div className="py-10 text-center text-sm text-slate-400">Loading admin revenue...</div> : revenueAdmins.length === 0 ? <div className="py-10 text-center text-sm text-slate-400">No admins are assigned to this business.</div> : revenueAdmins.map((admin) => (
+                <div key={admin.id} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                  <div className="min-w-0"><div className="truncate text-sm font-bold text-slate-100">{admin.name}</div><div className="truncate text-xs text-slate-500">@{admin.username || admin.email}</div></div>
+                  <div className="ml-4 flex items-center gap-2"><span className="text-lg font-extrabold text-emerald-400">{formatCurrency(admin.amount)}</span>{canManageRevenue && <button onClick={() => editAdminRevenue(admin)} title="Edit admin revenue" className="rounded-lg p-2 text-cyan-300 hover:bg-cyan-500/15"><Pencil className="h-4 w-4" /></button>}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

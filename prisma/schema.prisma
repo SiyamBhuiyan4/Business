@@ -21,6 +21,7 @@ model User {
   businessAccess      AdminBusinessAccess[]
   permissions         AdminPermission[]
   createdOrders       Order[]               @relation("CreatedOrders")
+  revenueBalances     AdminRevenueBalance[]
 }
 
 model Business {
@@ -37,6 +38,7 @@ model Business {
   orders              Order[]
   adminAccess         AdminBusinessAccess[]
   adminPermissions    AdminPermission[]
+  revenueBalances     AdminRevenueBalance[]
 }
 
 model Product {
@@ -105,4 +107,16 @@ model AdminPermission {
   enabled             Boolean               @default(true)
 
   @@unique([userId, businessId, permissionKey])
+}
+
+model AdminRevenueBalance {
+  id                  String                @id @default(uuid())
+  userId              String
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId          String
+  business            Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  amount              Float                 @default(0)
+  updatedAt           DateTime              @updatedAt
+
+  @@unique([userId, businessId])
 }

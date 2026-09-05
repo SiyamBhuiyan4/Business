@@ -108,6 +108,7 @@ export async function checkUserBusinessPermission(
       'orders:status': true,
       'sales:view': true,
       'investment:manage': true,
+      'revenue:manage': true,
       'pdf:export': true,
       'products:manage': true,
       'admins:manage': true,

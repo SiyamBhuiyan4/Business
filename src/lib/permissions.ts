@@ -37,6 +37,12 @@ export const PERMISSION_LIST: PermissionDefinition[] = [
     defaultForAdmin: false,
   },
   {
+    key: 'revenue:manage',
+    label: 'Manage Admin Revenue',
+    description: 'Can edit how much revenue is held by each admin',
+    defaultForAdmin: false,
+  },
+  {
     key: 'pdf:export',
     label: 'Export Delivery PDF',
     description: 'Can download delivery sheet PDFs for orders',
