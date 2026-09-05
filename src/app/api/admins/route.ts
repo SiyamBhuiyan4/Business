@@ -103,3 +103,15 @@ export async function DELETE(request: Request) {
   await prisma.user.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
+
+export async function PUT(request: Request) {
+  const user = await getSessionUser();
+  if (!user || user.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Only Super Admin can edit admin accounts' }, { status: 403 });
+  const { id, name, email, password, active } = await request.json();
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target || target.role !== 'ADMIN') return NextResponse.json({ error: 'Only normal admin accounts can be edited' }, { status: 400 });
+  const data: any = { name: name?.trim(), email: email?.toLowerCase().trim(), active: Boolean(active) };
+  if (password) data.passwordHash = await hashPassword(password);
+  const admin = await prisma.user.update({ where: { id }, data, select: { id: true, name: true, email: true, role: true, active: true } });
+  return NextResponse.json({ success: true, admin });
+}

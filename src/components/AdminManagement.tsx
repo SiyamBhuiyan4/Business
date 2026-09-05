@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Plus, Check, X, UserPlus, ToggleLeft, ToggleRight, Building, Key } from 'lucide-react';
+import { Shield, Plus, Check, X, UserPlus, ToggleLeft, ToggleRight, Building, Key, Mail, CalendarDays, Trash2, Pencil, UserCheck, UserX } from 'lucide-react';
 import { PERMISSION_LIST } from '@/lib/permissions';
 
 export default function AdminManagement() {
@@ -16,6 +16,10 @@ export default function AdminManagement() {
   const [password, setPassword] = useState('');
   const [selectedBizIds, setSelectedBizIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -39,6 +43,13 @@ export default function AdminManagement() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const openAdmin = (admin: any) => { setSelectedAdmin(admin); setEditMode(false); setEditName(admin.name); setEditEmail(admin.email); };
+  const updateAdmin = async (active: boolean = selectedAdmin.active, remove = false) => {
+    if (remove) { if (!window.confirm(`Delete ${selectedAdmin.name}? This cannot be easily undone.`)) return; const res = await fetch(`/api/admins?id=${selectedAdmin.id}`, { method: 'DELETE' }); if (res.ok) { setSelectedAdmin(null); fetchData(); } return; }
+    const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, email: editEmail, active }) });
+    if (res.ok) { setSelectedAdmin({ ...selectedAdmin, name: editName, email: editEmail, active }); setEditMode(false); fetchData(); }
+  };
 
   const handleTogglePermission = async (
     adminId: string,
@@ -169,20 +180,22 @@ export default function AdminManagement() {
           {admins.map((adm) => (
             <div
               key={adm.id}
-              className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5"
+              onClick={() => openAdmin(adm)}
+              className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 cursor-pointer hover:border-purple-500/50 transition-all"
             >
               {/* Admin Header */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/30 to-emerald-500/20 text-purple-300 font-bold text-lg flex items-center justify-center">
                     {adm.name.charAt(0)}
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-slate-100">{adm.name}</h3>
-                    <div className="text-xs font-mono text-slate-400">{adm.email}</div>
+                    <div className="text-xs font-mono text-slate-400">{adm.email}</div><div className="text-[10px] text-slate-500 mt-1">Joined {new Date(adm.createdAt).toLocaleDateString()}</div>
                   </div>
                 </div>
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${adm.active === false ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}`}>
+                  {adm.active === false ? 'Inactive' : 'Active'} · 
                   Assigned Workspaces: {adm.businessAccess.length}
                 </span>
               </div>
@@ -284,6 +297,8 @@ export default function AdminManagement() {
           No custom Admin accounts found. Create one using the button above.
         </div>
       )}
+
+      {selectedAdmin && <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-end" onClick={() => setSelectedAdmin(null)}><aside className="h-full w-full max-w-xl bg-slate-900 border-l border-slate-700 p-6 overflow-y-auto" onClick={(e) => e.stopPropagation()}><div className="flex justify-between items-start"><div className="flex gap-4 items-center"><div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-purple-500 to-emerald-400 text-slate-950 text-2xl font-black flex items-center justify-center">{selectedAdmin.name.charAt(0)}</div><div><p className="text-xs uppercase tracking-widest text-purple-300">Admin profile</p><h2 className="text-2xl font-black text-white">{selectedAdmin.name}</h2><p className="text-sm text-slate-400">{selectedAdmin.email}</p></div></div><button onClick={() => setSelectedAdmin(null)} className="p-2 rounded-xl bg-slate-800"><X className="w-5 h-5" /></button></div><div className="grid grid-cols-2 gap-3 mt-6"><div className="bg-slate-950/70 p-4 rounded-2xl"><p className="text-[10px] text-slate-500 uppercase">Status</p><p className="font-bold mt-1">{selectedAdmin.active === false ? 'Inactive' : 'Active'}</p></div><div className="bg-slate-950/70 p-4 rounded-2xl"><p className="text-[10px] text-slate-500 uppercase">Workspaces</p><p className="font-bold mt-1">{selectedAdmin.businessAccess.length}</p></div></div><div className="mt-6 flex gap-2"><button onClick={() => setEditMode(!editMode)} className="flex-1 py-2.5 rounded-xl bg-purple-500 text-slate-950 font-bold text-xs"><Pencil className="w-4 h-4 inline mr-2" />{editMode ? 'Cancel Edit' : 'Edit Profile'}</button><button onClick={() => updateAdmin(selectedAdmin.active === false)} className="px-3 rounded-xl bg-slate-800 text-xs">{selectedAdmin.active === false ? <UserCheck className="w-4 h-4" /> : <UserX className="w-4 h-4" />}</button><button onClick={() => updateAdmin(selectedAdmin.active, true)} className="px-3 rounded-xl bg-rose-500/15 text-rose-300"><Trash2 className="w-4 h-4" /></button></div>{editMode && <div className="mt-4 space-y-3"><input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm" placeholder="Full name" /><input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm" placeholder="Email" /><button onClick={() => updateAdmin()} className="w-full py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold text-sm">Save Changes</button></div>}<h3 className="mt-8 mb-3 font-bold text-slate-200">Permission overview</h3><div className="space-y-3">{PERMISSION_LIST.map((p) => <div key={p.key} className="flex justify-between items-center p-3 rounded-xl bg-slate-950/60 border border-slate-800"><span className="text-sm">{p.label}</span><span className="text-xs text-purple-300">{selectedAdmin.permissions.filter((x: any) => x.permissionKey === p.key && x.enabled).length} workspace(s)</span></div>)}</div><h3 className="mt-8 mb-3 font-bold text-slate-200">Assigned segments</h3><div className="flex flex-wrap gap-2">{selectedAdmin.businessAccess.map((x: any) => <span key={x.businessId} className="px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-300 text-xs">{x.business.name}</span>)}</div></aside></div>}
 
       {/* Create Admin Modal */}
       {showCreateModal && (
