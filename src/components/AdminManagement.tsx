@@ -167,6 +167,7 @@ export default function AdminManagement() {
           <p className="text-xs text-slate-400 mt-1">
             Configure exact toggle permissions per Admin user per Business workspace (Admin ↔ Business ↔ Permission)
           </p>
+          <p className="text-[11px] text-purple-300 mt-2">Select an admin, then use Manage Access to assign workspaces and toggle permissions.</p>
         </div>
 
         <button
@@ -200,10 +201,14 @@ export default function AdminManagement() {
                     <div className="text-xs font-mono text-slate-400">{adm.email}</div><div className="text-[10px] text-slate-500 mt-1">Joined {new Date(adm.createdAt).toLocaleDateString()}</div>
                   </div>
                 </div>
-                <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${adm.active === false ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}`}>
-                  {adm.active === false ? 'Inactive' : 'Active'} · 
-                  Assigned Workspaces: {adm.businessAccess.length}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${adm.active === false ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}`}>
+                    {adm.active === false ? 'Inactive' : 'Active'} · Assigned Workspaces: {adm.businessAccess.length}
+                  </span>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500 text-slate-950 text-xs font-bold hover:bg-purple-400 transition-colors">
+                    <Key className="w-3.5 h-3.5" /> Manage Access
+                  </button>
+                </div>
               </div>
 
               {/* Per Business Permissions Breakdown */}
