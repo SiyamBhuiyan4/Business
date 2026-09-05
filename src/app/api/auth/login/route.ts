@@ -6,14 +6,15 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const { email, password, loginAs } = await request.json();
+    const { email, username, password, loginAs } = await request.json();
+    const identifier = String(username || email || '').toLowerCase().trim();
 
-    if (!email || !password) {
+    if (!identifier || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ email: identifier }, { username: identifier }] },
     });
 
     if (!user || !user.active) {

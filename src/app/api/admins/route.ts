@@ -17,6 +17,7 @@ export async function GET() {
       id: true,
       name: true,
       email: true,
+      username: true,
       createdAt: true,
       businessAccess: {
         include: {
@@ -38,15 +39,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { name, email, password, assignedBusinessIds } = await request.json();
+    const { name, username, email, password, assignedBusinessIds } = await request.json();
 
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Name, Email, and Password are required' }, { status: 400 });
+    if (!name || !username || !password) {
+      return NextResponse.json({ error: 'Name, Username, and Password are required' }, { status: 400 });
     }
 
-    const existing = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
-    });
+    const existing = await prisma.user.findFirst({ where: { OR: [{ username: username.toLowerCase().trim() }, ...(email ? [{ email: email.toLowerCase().trim() }] : [])] } });
     if (existing) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 });
     }
@@ -56,7 +55,8 @@ export async function POST(request: Request) {
     const newAdmin = await prisma.user.create({
       data: {
         name: name.trim(),
-        email: email.toLowerCase().trim(),
+        username: username.toLowerCase().trim(),
+        email: email?.toLowerCase().trim() || `${username.toLowerCase().trim()}@local.invalid`,
         passwordHash,
         role: 'ADMIN',
       },
@@ -107,10 +107,10 @@ export async function DELETE(request: Request) {
 export async function PUT(request: Request) {
   const user = await getSessionUser();
   if (!user || user.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Only Super Admin can edit admin accounts' }, { status: 403 });
-  const { id, name, email, password, active } = await request.json();
+  const { id, name, username, email, password, active } = await request.json();
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target || target.role !== 'ADMIN') return NextResponse.json({ error: 'Only normal admin accounts can be edited' }, { status: 400 });
-  const data: any = { name: name?.trim(), email: email?.toLowerCase().trim(), active: Boolean(active) };
+  const data: any = { name: name?.trim(), username: username?.toLowerCase().trim(), email: email?.toLowerCase().trim() || `${username.toLowerCase().trim()}@local.invalid`, active: Boolean(active) };
   if (password) data.passwordHash = await hashPassword(password);
   const admin = await prisma.user.update({ where: { id }, data, select: { id: true, name: true, email: true, role: true, active: true } });
   return NextResponse.json({ success: true, admin });

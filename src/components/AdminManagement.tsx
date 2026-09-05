@@ -13,6 +13,7 @@ export default function AdminManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [selectedBizIds, setSelectedBizIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -20,6 +21,8 @@ export default function AdminManagement() {
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editPassword, setEditPassword] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -44,10 +47,10 @@ export default function AdminManagement() {
     fetchData();
   }, []);
 
-  const openAdmin = (admin: any) => { setSelectedAdmin(admin); setEditMode(false); setEditName(admin.name); setEditEmail(admin.email); };
+  const openAdmin = (admin: any) => { setSelectedAdmin(admin); setEditMode(false); setEditName(admin.name); setEditEmail(admin.email); setEditUsername(admin.username || admin.email.split('@')[0]); setEditPassword(''); };
   const updateAdmin = async (active: boolean = selectedAdmin.active, remove = false) => {
     if (remove) { if (!window.confirm(`Delete ${selectedAdmin.name}? This cannot be easily undone.`)) return; const res = await fetch(`/api/admins?id=${selectedAdmin.id}`, { method: 'DELETE' }); if (res.ok) { setSelectedAdmin(null); fetchData(); } return; }
-    const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, email: editEmail, active }) });
+    const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, username: editUsername, email: editEmail, password: editPassword || undefined, active }) });
     if (res.ok) { setSelectedAdmin({ ...selectedAdmin, name: editName, email: editEmail, active }); setEditMode(false); fetchData(); }
   };
 
@@ -116,7 +119,7 @@ export default function AdminManagement() {
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password) return;
+    if (!name || !username || !password) return;
 
     setSubmitting(true);
     try {
@@ -125,6 +128,7 @@ export default function AdminManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
+          username: username.trim(),
           email: email.trim(),
           password,
           assignedBusinessIds: selectedBizIds,
@@ -135,6 +139,7 @@ export default function AdminManagement() {
         setShowCreateModal(false);
         setName('');
         setEmail('');
+        setUsername('');
         setPassword('');
         setSelectedBizIds([]);
         fetchData();
@@ -328,16 +333,18 @@ export default function AdminManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Email Address *</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Username *</label>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="e.g. rahim.admin"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
                 />
               </div>
+
+              <div><label className="block text-xs font-semibold text-slate-400 mb-1">Email Address (optional)</label><input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Optional email" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500" /></div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Password *</label>
