@@ -46,10 +46,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
             </div>
             <div>
               <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                BizHub
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-                Multi-Admin
+                Rise
               </span>
             </div>
           </Link>
