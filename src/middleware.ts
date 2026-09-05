@@ -20,10 +20,8 @@ export async function middleware(request: NextRequest) {
 
   try {
     const verified = await jwtVerify(token, JWT_SECRET);
-    if (isAuthPage) {
-      const role = verified.payload.role;
-      return NextResponse.redirect(new URL(role === 'ADMIN' ? '/admin/dashboard' : '/dashboard', request.url));
-    }
+    // Keep both login pages reachable so users can switch account types.
+    if (isAuthPage) return NextResponse.next();
     if (pathname.startsWith('/admin') && verified.payload.role !== 'ADMIN') return NextResponse.redirect(new URL('/dashboard', request.url));
     if (pathname.startsWith('/dashboard') && verified.payload.role === 'ADMIN') return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     return NextResponse.next();
