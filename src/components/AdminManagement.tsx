@@ -50,7 +50,8 @@ export default function AdminManagement() {
   const openAdmin = (admin: any) => { setSelectedAdmin(admin); setEditMode(false); setEditName(admin.name); setEditEmail(admin.email); setEditUsername(admin.username || admin.email.split('@')[0]); setEditPassword(''); };
   const updateAdmin = async (active: boolean = selectedAdmin.active, remove = false) => {
     if (remove) { if (!window.confirm(`Delete ${selectedAdmin.name}? This cannot be easily undone.`)) return; const res = await fetch(`/api/admins?id=${selectedAdmin.id}`, { method: 'DELETE' }); if (res.ok) { setSelectedAdmin(null); fetchData(); } return; }
-    const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, username: editUsername, email: editEmail, password: editPassword || undefined, active }) });
+    const nextPassword = editPassword || window.prompt('Set a new password for this admin (leave blank to keep the current password):') || '';
+    const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, username: editUsername, email: editEmail, password: nextPassword || undefined, active }) });
     if (res.ok) { setSelectedAdmin({ ...selectedAdmin, name: editName, email: editEmail, active }); setEditMode(false); fetchData(); }
   };
 
