@@ -194,8 +194,8 @@ export default function DashboardOverviewPage() {
 
                     {/* Business Summary Stats */}
                     <div className="grid grid-cols-4 gap-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
-                      <div onDoubleClick={() => user?.role === 'SUPER_ADMIN' && handleInvestment(biz)}>
-                        <div className="text-[10px] uppercase font-bold text-slate-500">Investment</div>
+                      <div>
+                        <div className="flex items-center justify-between"><div className="text-[10px] uppercase font-bold text-slate-500">Investment</div>{user?.role === 'SUPER_ADMIN' && <button type="button" onClick={() => handleInvestment(biz)} className="p-1 text-purple-300 hover:text-white" title="Edit investment"><Pencil className="w-3.5 h-3.5" /></button>}</div>
                         <div className="text-sm lg:text-base font-extrabold text-purple-300 mt-1">{formatCurrency(biz.investment || 0)}</div>
                       </div>
                       <div>
