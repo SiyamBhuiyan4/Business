@@ -34,7 +34,10 @@ export default function AdminManagement() {
       const admJson = await admRes.json();
       const bizJson = await bizRes.json();
 
-      if (admRes.ok) setAdmins(admJson.admins);
+      if (admRes.ok) {
+        setAdmins(admJson.admins);
+        setSelectedAdmin((current: any) => current ? (admJson.admins.find((a: any) => a.id === current.id) || null) : current);
+      }
       if (bizRes.ok) setBusinesses(bizJson.businesses);
     } catch (err) {
       console.error('Failed to load admin management data:', err);
@@ -87,9 +90,8 @@ export default function AdminManagement() {
         }),
       });
 
-      if (res.ok) {
-        fetchData();
-      }
+      if (res.ok) await fetchData();
+      else { const json = await res.json().catch(() => ({})); alert(json.error || 'Failed to update permission'); }
     } catch (err) {
       console.error('Failed to toggle permission:', err);
     }
@@ -110,9 +112,8 @@ export default function AdminManagement() {
         }),
       });
 
-      if (res.ok) {
-        fetchData();
-      }
+      if (res.ok) await fetchData();
+      else { const json = await res.json().catch(() => ({})); alert(json.error || 'Failed to update workspace access'); }
     } catch (err) {
       console.error('Failed to toggle business access:', err);
     }
