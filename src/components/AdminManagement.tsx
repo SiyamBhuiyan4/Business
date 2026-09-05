@@ -23,6 +23,7 @@ export default function AdminManagement() {
   const [editEmail, setEditEmail] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [accessUpdating, setAccessUpdating] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -65,6 +66,7 @@ export default function AdminManagement() {
     currentVal: boolean,
     allAdminPerms: any[]
   ) => {
+    setAccessUpdating(`${adminId}:${businessId}`);
     // Build updated permissions map for this admin & business
     const currentPermsForBiz: Record<string, boolean> = {};
     PERMISSION_LIST.forEach((p) => {
@@ -94,6 +96,9 @@ export default function AdminManagement() {
       else { const json = await res.json().catch(() => ({})); alert(json.error || 'Failed to update permission'); }
     } catch (err) {
       console.error('Failed to toggle permission:', err);
+      alert('Could not update permission. Please try again.');
+    } finally {
+      setAccessUpdating(null);
     }
   };
 
@@ -102,6 +107,7 @@ export default function AdminManagement() {
     businessId: string,
     isCurrentlyAssigned: boolean
   ) => {
+    setAccessUpdating(`${adminId}:${businessId}`);
     try {
       const res = await fetch(`/api/admins/${adminId}/permissions`, {
         method: 'PUT',
@@ -116,6 +122,9 @@ export default function AdminManagement() {
       else { const json = await res.json().catch(() => ({})); alert(json.error || 'Failed to update workspace access'); }
     } catch (err) {
       console.error('Failed to toggle business access:', err);
+      alert('Could not update workspace access. Please try again.');
+    } finally {
+      setAccessUpdating(null);
     }
   };
 
@@ -240,13 +249,14 @@ export default function AdminManagement() {
 
                         <button
                           onClick={() => handleToggleBusinessAccess(adm.id, biz.id, isAssigned)}
+                          disabled={accessUpdating === `${adm.id}:${biz.id}`}
                           className={`text-xs font-bold px-3 py-1 rounded-lg border transition-all ${
                             isAssigned
                               ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                               : 'bg-slate-800 text-slate-500 border-slate-700'
                           }`}
                         >
-                          {isAssigned ? 'Assigned (Active)' : '+ Assign Access'}
+                          {accessUpdating === `${adm.id}:${biz.id}` ? 'Saving...' : isAssigned ? 'Assigned (Active)' : '+ Assign Access'}
                         </button>
                       </div>
 
