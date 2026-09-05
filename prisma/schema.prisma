@@ -29,6 +29,7 @@ model Business {
   slug                String                @unique
   icon                String                @default("building-2")
   color               String                @default("emerald")
+  investment          Float                 @default(0)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
 

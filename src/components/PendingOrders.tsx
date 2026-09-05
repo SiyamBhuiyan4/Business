@@ -83,9 +83,6 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
       const json = await res.json();
       if (res.ok && json.products) {
         setProducts(json.products);
-        if (json.products.length > 0 && !orderItems[0].productId) {
-          setOrderItems([{ productId: json.products[0].id, quantity: 1 }]);
-        }
       }
     } catch (err) {
       console.error('Failed to fetch products:', err);
@@ -325,7 +322,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                         {formatDate(ord.expectedDeliveryDate)}
                       </div>
                       <div className="text-[10px] text-slate-500 mt-0.5">
-                        Created: {formatDate(ord.createdAt)}
+                        Created: {formatDate(ord.createdAt)} · {new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} by {ord.createdByUser?.name || 'Unknown'}
                       </div>
                     </td>
 

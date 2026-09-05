@@ -36,8 +36,8 @@ export async function GET() {
       const todaySalesResult = await prisma.order.aggregate({
         where: {
           businessId: biz.id,
-          status: { not: 'CANCELLED' },
-          createdAt: {
+          status: 'DELIVERED',
+          deliveredAt: {
             gte: todayStart,
             lte: todayEnd,
           },
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { name, icon, color, products } = await request.json();
+    const { name, icon, color, investment, products } = await request.json();
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Business name is required' }, { status: 400 });
@@ -100,6 +100,7 @@ export async function POST(request: Request) {
         slug,
         icon: icon || 'building-2',
         color: color || 'emerald',
+        investment: Number.isFinite(Number(investment)) ? Number(investment) : 0,
       },
     });
 

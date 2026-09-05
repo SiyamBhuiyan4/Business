@@ -102,6 +102,13 @@ export default function DashboardOverviewPage() {
     if (res.ok) fetchData(); else alert((await res.json()).error || 'Failed to edit business');
   };
 
+  const handleInvestment = async (biz: any) => {
+    const value = window.prompt('Set investment amount (৳)', String(biz.investment || 0));
+    if (value === null || !Number.isFinite(Number(value)) || Number(value) < 0) return;
+    const res = await fetch(`/api/businesses/${biz.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: biz.name, icon: biz.icon, color: biz.color, investment: Number(value) }) });
+    if (res.ok) { const json = await res.json(); setBusinesses((prev) => prev.map((item) => item.id === biz.id ? { ...item, investment: json.business.investment } : item)); }
+  };
+
   const handleDeleteBusiness = async (biz: any) => {
     if (!window.confirm(`Delete ${biz.name} and all of its products, orders, and access records? This cannot be undone.`)) return;
     const res = await fetch(`/api/businesses/${biz.id}`, { method: 'DELETE' });
@@ -186,7 +193,11 @@ export default function DashboardOverviewPage() {
                     </div>
 
                     {/* Business Summary Stats */}
-                    <div className="grid grid-cols-3 gap-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
+                    <div className="grid grid-cols-4 gap-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
+                      <div onDoubleClick={() => user?.role === 'SUPER_ADMIN' && handleInvestment(biz)}>
+                        <div className="text-[10px] uppercase font-bold text-slate-500">Investment</div>
+                        <div className="text-sm lg:text-base font-extrabold text-purple-300 mt-1">{formatCurrency(biz.investment || 0)}</div>
+                      </div>
                       <div>
                         <div className="text-[10px] uppercase font-bold text-slate-500">Today's Sales</div>
                         <div className="text-sm lg:text-base font-extrabold text-emerald-400 mt-1">
