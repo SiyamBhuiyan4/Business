@@ -125,10 +125,10 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
   return (
     <div className="space-y-6">
       {/* Date Range Selector & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 p-4 rounded-2xl shadow-xl">
+      <div className="analytics-glass analytics-toolbar flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-emerald-400" />
-          <h2 className="text-lg font-bold text-slate-100">Sales & Revenue Analytics</h2>
+          <TrendingUp className="w-5 h-5 text-[#0D9488]" />
+          <h2 className="text-[1.1rem] font-bold text-[#0F172A]">Sales & Revenue Analytics</h2>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -198,63 +198,63 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <button type="button" onClick={openInvestmentBreakdown} className="text-left bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl shadow-xl relative overflow-hidden group transition-colors">
+        <button type="button" onClick={openInvestmentBreakdown} className="analytics-kpi analytics-kpi-investment text-left p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl" />
-          <div className="flex items-center justify-between"><span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Invested</span><div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center"><Wallet className="w-5 h-5" /></div></div>
-          <div className="mt-3 flex items-center gap-2"><div className="text-2xl lg:text-3xl font-extrabold text-white">{formatCurrency(investmentTotal)}</div></div>
-          <div className="text-xs text-cyan-400 mt-1 font-medium">Business investment (BDT)</div>
+          <div className="flex items-center justify-between"><span className="analytics-label">Total Invested</span><div className="analytics-icon bg-[#C88A58]"><Wallet className="w-5 h-5" /></div></div>
+          <div className="mt-3 flex items-center gap-2"><div className="analytics-value">{formatCurrency(investmentTotal)}</div></div>
+          <div className="analytics-subtext mt-1">Business investment (BDT)</div>
           <span className="absolute bottom-4 right-4 text-[10px] font-semibold text-slate-500 group-hover:text-cyan-400">Click to view admins</span>
         </button>
-        <button type="button" onClick={openRevenueBreakdown} className="text-left bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 hover:border-emerald-500/50 p-5 rounded-2xl shadow-xl relative overflow-hidden group transition-colors">
+        <button type="button" onClick={openRevenueBreakdown} className="analytics-kpi analytics-kpi-revenue text-left p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Sales Revenue</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+            <span className="analytics-label">Total Sales Revenue</span>
+            <div className="analytics-icon bg-[#0891B2]">
               ৳
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl lg:text-3xl font-extrabold text-white">
+            <div className="analytics-value">
               {formatCurrency(revenueTotal || (data ? data.summary.totalSales : 0))}
             </div>
-            <div className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+            <div className="analytics-subtext mt-1 flex items-center gap-1">
               Selected Period Revenue (BDT)
             </div>
           </div>
           <span className="absolute bottom-4 right-4 text-[10px] font-semibold text-slate-500 group-hover:text-emerald-400">Click to view admins</span>
         </button>
 
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-5 rounded-2xl shadow-xl relative overflow-hidden group">
+        <div className="analytics-kpi analytics-kpi-orders p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <span className="analytics-label">Total Orders</span>
+            <div className="analytics-icon bg-[#D97706]">
               <ShoppingBag className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl lg:text-3xl font-extrabold text-white">
+            <div className="analytics-value">
               {data ? data.summary.totalOrders : 0}
             </div>
-            <div className="text-xs text-amber-400 mt-1 flex items-center gap-1 font-medium">
+            <div className="analytics-subtext mt-1 flex items-center gap-1">
               Completed & Pending Orders
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-5 rounded-2xl shadow-xl relative overflow-hidden group">
+        <div className="analytics-kpi analytics-kpi-average p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Avg Order Value</span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+            <span className="analytics-label">Avg Order Value</span>
+            <div className="analytics-icon bg-[#4F46E5]">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl lg:text-3xl font-extrabold text-white">
+            <div className="analytics-value">
               {data ? formatCurrency(data.summary.avgOrderValue) : '৳0'}
             </div>
-            <div className="text-xs text-indigo-400 mt-1 flex items-center gap-1 font-medium">
+            <div className="analytics-subtext mt-1 flex items-center gap-1">
               Average per Order
             </div>
           </div>
@@ -292,11 +292,11 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
       {/* Main Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Line / Bar Chart (Revenue Over Time) */}
-        <div className="lg:col-span-2 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col justify-between">
+        <div className="analytics-glass lg:col-span-2 p-5 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-bold text-slate-100">Revenue & Order Volume Over Time</h3>
-              <p className="text-xs text-slate-400">Daily revenue (BDT ৳) and total count</p>
+              <h3 className="text-base font-bold text-[#0F172A]">Revenue & Order Volume Over Time</h3>
+              <p className="text-xs text-[#64748B]">Daily revenue (BDT ৳) and total count</p>
             </div>
             <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
               {data?.salesOverTime?.length || 0} Days
@@ -311,7 +311,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
             ) : data?.salesOverTime?.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={data.salesOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(226,232,240,.8)" />
                   <XAxis dataKey="displayDate" stroke="#64748b" fontSize={12} tickLine={false} />
                   <YAxis yAxisId="left" stroke="#10b981" fontSize={12} tickLine={false} tickFormatter={(val) => `৳${val}`} />
                   <YAxis yAxisId="right" orientation="right" stroke="#6366f1" fontSize={12} tickLine={false} />
@@ -323,7 +323,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
                     ]}
                   />
                   <Bar yAxisId="right" dataKey="orderCount" name="Orders" fill="#6366f1" opacity={0.35} radius={[4, 4, 0, 0]} barSize={20} />
-                  <Line yAxisId="left" type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} />
+                  <Line yAxisId="left" type="monotone" dataKey="revenue" name="Revenue" stroke="#0D9488" strokeWidth={3} dot={{ r: 4, fill: '#0D9488', stroke: '#fff', strokeWidth: 2 }} />
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
@@ -335,10 +335,10 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
         </div>
 
         {/* Pie Chart (Sales Breakdown by Product) */}
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col justify-between">
+        <div className="analytics-glass p-5 rounded-2xl flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-bold text-slate-100">Product Sales Breakdown</h3>
-            <p className="text-xs text-slate-400">Revenue split across products</p>
+            <h3 className="text-base font-bold text-[#0F172A]">Product Sales Breakdown</h3>
+            <p className="text-xs text-[#64748B]">Revenue split across products</p>
           </div>
 
           <div className="h-64 w-full my-auto flex items-center justify-center">
