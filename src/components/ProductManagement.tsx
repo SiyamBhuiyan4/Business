@@ -105,19 +105,19 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
 
   return (
     <div className="space-y-6">
-      <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl flex items-center justify-between">
+      <div className="analytics-glass p-5 rounded-2xl flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Package className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-lg font-bold text-slate-100">Product Catalog & Inventory</h2>
+            <Package className="w-5 h-5 text-[#0D9488]" />
+            <h2 className="text-lg font-bold text-[#0F172A]">Product Catalog & Inventory</h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Manage product list, pricing (BDT ৳), and availability</p>
+          <p className="text-xs text-[#64748B] mt-1">Manage products, pricing, and availability</p>
         </div>
 
         {permissions['products:manage'] && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20"
+            className="order-primary flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             Add Product
@@ -132,38 +132,37 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
           products.map((prod) => (
             <div
               key={prod.id}
-              className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl shadow-xl relative overflow-hidden flex flex-col justify-between"
+              className="product-card relative flex flex-col justify-between overflow-hidden rounded-2xl p-5"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase">
+                  <span className="product-sku">
                     {prod.sku || 'SKU-NONE'}
                   </span>
                   <button
                     onClick={() => permissions['products:manage'] && handleToggleAvailability(prod.id, prod.isAvailable)}
                     disabled={!permissions['products:manage']}
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                      prod.isAvailable
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                        : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                      prod.isAvailable ? 'product-stock-in' : 'product-stock-out'
                     }`}
                   >
                     {prod.isAvailable ? 'In Stock' : 'Out of Stock'}
                   </button>
                 </div>
 
-                <h3 className="text-base font-bold text-slate-100 mt-2 break-words">{prod.name}</h3>
+                <div className="product-image"><Package className="h-8 w-8" /></div>
+                <h3 className="product-title mt-3 break-words">{prod.name}</h3>
 
-                <div className="text-xl font-black text-emerald-400 mt-2">
+                <div className="product-price mt-2">
                   {formatCurrency(prod.unitPrice)}
                 </div>
               </div>
 
               {permissions['products:manage'] && (
-                <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+                <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
                   <button
                     onClick={() => handleDeleteProduct(prod.id)}
-                    className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-xs"
+                    className="order-action order-action-delete"
                     title="Delete product"
                   >
                     <Trash2 className="w-4 h-4" />
