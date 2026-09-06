@@ -41,8 +41,8 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
         {/* Left: Brand Logo & Business Switcher */}
         <div className="flex items-center gap-3 min-w-0">
           <Link href={workspaceBase} className="flex items-center gap-2.5 group">
-            <div className="navbar-brand-icon flex h-10 w-10 items-center justify-center rounded-xl text-white transition-transform group-hover:scale-105">
-              <Store className="w-5 h-5" />
+            <div className="navbar-brand-icon flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-105">
+              <Store className="h-5 w-5" />
             </div>
             <div>
               <span className="navbar-brand-name text-lg font-extrabold tracking-tight">
