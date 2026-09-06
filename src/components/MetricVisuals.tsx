@@ -10,13 +10,13 @@ export function NetworkGlobe() {
     const canvas = ref.current; const ctx = canvas?.getContext('2d'); if (!canvas || !ctx) return;
     let raf = 0; let w = 0; let h = 0;
     const resize = () => { const d = Math.min(devicePixelRatio || 1, 2); w = canvas.clientWidth; h = canvas.clientHeight; canvas.width = w * d; canvas.height = h * d; ctx.setTransform(d, 0, 0, d, 0, 0); };
-    const nodes = Array.from({ length: 34 }, (_, i) => ({ lat: -1.15 + (i % 9) * .28, lon: (i * 2.41) % (Math.PI * 2), size: 1.6 + i % 3 }));
+    const nodes = Array.from({ length: 150 }, (_, i) => ({ lat: -1.42 + (i % 19) * .158, lon: (i * 2.399) % (Math.PI * 2), size: 1.2 + i % 3 * .35 }));
     const draw = (time: number) => {
-      ctx.clearRect(0, 0, w, h); const cx = w / 2; const cy = h / 2; const r = Math.min(w, h) * .38; const spin = time * .00035;
+      ctx.clearRect(0, 0, w, h); const cx = w / 2; const cy = h / 2; const r = Math.min(w, h) * .47; const spin = time * .00035;
       const points = nodes.map((n) => { const lon = n.lon + spin; const x3 = Math.cos(n.lat) * Math.cos(lon); const z3 = Math.cos(n.lat) * Math.sin(lon); return { x: cx + x3 * r, y: cy + Math.sin(n.lat) * r, z: z3, size: n.size }; });
-      ctx.strokeStyle = 'rgba(200,138,88,.25)'; ctx.lineWidth = .7;
+      ctx.strokeStyle = 'rgba(200,138,88,.4)'; ctx.lineWidth = .65;
       points.forEach((p, i) => points.slice(i + 1).forEach((q) => { const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < r * .55 && p.z > -.25 && q.z > -.25) { ctx.globalAlpha = .65 * (1 - d / (r * .55)); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); } }));
-      points.forEach((p, i) => { if (p.z < -.35) return; ctx.globalAlpha = .45 + p.z * .35; ctx.fillStyle = i % 3 === 0 ? '#C88A58' : '#226D68'; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (1 + Math.sin(time * .003 + i) * .18), 0, Math.PI * 2); ctx.fill(); });
+      points.forEach((p, i) => { if (p.z < -.5) return; ctx.globalAlpha = .55 + p.z * .4; ctx.fillStyle = i % 4 === 0 ? '#FFD0A8' : '#C88A58'; ctx.shadowBlur = 7; ctx.shadowColor = '#C88A58'; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (1 + Math.sin(time * .003 + i) * .18), 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; });
       ctx.globalAlpha = 1; ctx.strokeStyle = 'rgba(26,83,92,.16)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(cx, cy, r, r * .3, 0, 0, Math.PI * 2); ctx.stroke();
       raf = requestAnimationFrame(draw);
     };
