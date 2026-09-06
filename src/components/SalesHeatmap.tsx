@@ -47,7 +47,7 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
     setLoadingOrders(true);
     try {
       const res = await fetch(
-        `/api/businesses/${businessId}/orders?startDate=${day.date}&endDate=${day.date}`
+        `/api/businesses/${businessId}/orders?deliveredDate=${day.date}`
       );
       const json = await res.json();
       if (res.ok && json.orders) {

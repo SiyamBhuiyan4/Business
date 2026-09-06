@@ -21,6 +21,7 @@ export async function GET(
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
   const createdBy = searchParams.get('createdBy');
+  const deliveredDate = searchParams.get('deliveredDate');
 
   const whereClause: any = {
     businessId: params.id,
@@ -48,6 +49,13 @@ export async function GET(
       eDate.setHours(23, 59, 59, 999);
       whereClause.expectedDeliveryDate.lte = eDate;
     }
+  }
+
+  if (deliveredDate) {
+    const dayStart = new Date(`${deliveredDate}T00:00:00.000`);
+    const dayEnd = new Date(`${deliveredDate}T23:59:59.999`);
+    whereClause.status = 'DELIVERED';
+    whereClause.deliveredAt = { gte: dayStart, lte: dayEnd };
   }
 
   const orders = await prisma.order.findMany({
@@ -184,7 +192,7 @@ export async function PUT(
     const updateData: any = {};
     if (status) {
       updateData.status = status;
-      updateData.deliveredAt = status === 'DELIVERED' ? (existingOrder.deliveredAt || new Date()) : null;
+      updateData.deliveredAt = status === 'DELIVERED' ? new Date() : null;
     }
     if (notes !== undefined) updateData.notes = notes;
     if (customerName !== undefined) updateData.customerName = customerName.trim();
