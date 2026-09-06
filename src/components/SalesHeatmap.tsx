@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Flame, Calendar as CalendarIcon, X, Eye, PackageCheck, Info } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import SpotlightCard from '@/components/SpotlightCard';
 
 interface SalesHeatmapProps {
   businessId: string;
@@ -108,6 +109,7 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
               const dayOfWeek = format(parsedDate, 'EEE');
 
               return (
+                <SpotlightCard className="rounded-xl">
                 <button
                   key={day.date}
                   onClick={() => handleDayClick(day)}
@@ -141,6 +143,7 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
                     </div>
                   </div>
                 </button>
+                </SpotlightCard>
               );
             })}
           </div>

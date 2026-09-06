@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Package, Plus, Edit2, Trash2, CheckCircle, XCircle, Tag } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { confirmMutation } from '@/lib/confirmMutation';
+import SpotlightCard from '@/components/SpotlightCard';
 
 interface ProductManagementProps {
   businessId: string;
@@ -130,7 +131,7 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
           <div className="col-span-full py-16 text-center text-slate-500 text-sm">Loading catalog...</div>
         ) : products.length > 0 ? (
           products.map((prod) => (
-            <div
+            <SpotlightCard
               key={prod.id}
               className="product-card relative flex flex-col justify-between overflow-hidden rounded-2xl p-5"
             >
@@ -169,7 +170,7 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
                   </button>
                 </div>
               )}
-            </div>
+            </SpotlightCard>
           ))
         ) : (
           <div className="col-span-full py-16 text-center text-slate-500 text-sm">
