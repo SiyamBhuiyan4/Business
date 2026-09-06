@@ -21,7 +21,7 @@ export default function AdminsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] flex flex-col text-slate-100">
+    <div className="min-h-screen flex flex-col">
       <Navbar user={user} businesses={businesses} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8">
         <AdminManagement />

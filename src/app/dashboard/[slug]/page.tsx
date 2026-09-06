@@ -133,12 +133,12 @@ export default function BusinessDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] flex flex-col text-slate-100">
+    <div className="min-h-screen flex flex-col">
       <Navbar user={user} businesses={businesses} currentBusinessSlug={slug} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-6">
         {/* Business Title Banner */}
-        <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="glass-panel flex flex-col justify-between gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:p-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl">
               <Building2 className="w-6 h-6" />
@@ -164,7 +164,7 @@ export default function BusinessDashboardPage() {
         </div>
 
         {/* Tab Navigation Controls */}
-        <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2 overflow-x-auto">
+        <div className="glass-panel flex items-center gap-2 overflow-x-auto rounded-2xl p-2">
           {permissions['sales:view'] && (
             <>
               <button
@@ -188,7 +188,7 @@ export default function BusinessDashboardPage() {
                 }`}
               >
                 <Calendar className="w-4 h-4" />
-                <span>Sales Heatmap 🔥</span>
+                <span>Sales Heatmap</span>
               </button>
             </>
           )}

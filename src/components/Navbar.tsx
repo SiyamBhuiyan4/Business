@@ -36,16 +36,16 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 lg:px-8 py-3.5 shadow-lg">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 min-w-0">
+    <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 lg:px-8">
+      <div className="glass-panel mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-2xl px-3 py-2.5 sm:px-4 min-w-0">
         {/* Left: Brand Logo & Business Switcher */}
         <div className="flex items-center gap-3 min-w-0">
           <Link href={workspaceBase} className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1A535C] text-white shadow-lg shadow-teal-900/20 transition-transform group-hover:scale-105">
               <Store className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+              <span className="text-lg font-extrabold tracking-tight text-[#2B2D42]">
                 Rise
               </span>
             </div>
@@ -56,7 +56,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-sm font-medium text-slate-200 transition-colors"
+                className="flex max-w-[210px] items-center gap-2 rounded-xl border border-white/70 bg-white/45 px-3 py-2 text-sm font-semibold text-[#2B2D42] shadow-sm sm:max-w-none"
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="max-w-[150px] sm:max-w-[220px] truncate">
@@ -107,7 +107,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
           {user?.role === 'SUPER_ADMIN' && (
             <Link
               href="/dashboard/admins"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
                 pathname === '/dashboard/admins'
                   ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
                   : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
@@ -118,8 +118,8 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
             </Link>
           )}
 
-          <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/60 px-3 py-1.5 rounded-lg">
-            <UserCheck className="w-4 h-4 text-emerald-400" />
+          <div className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/45 px-2 py-1.5 sm:px-3">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C88A58] text-[10px] font-black text-white">{user?.role === 'SUPER_ADMIN' ? 'SA' : 'A'}</span>
             <div className="text-left hidden sm:block">
               <div className="text-xs font-semibold text-slate-200">{user?.name}</div>
               <div className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider">

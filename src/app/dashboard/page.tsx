@@ -116,21 +116,21 @@ export default function DashboardOverviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] flex flex-col text-slate-100">
+    <div className="min-h-screen flex flex-col">
       <Navbar user={user} businesses={businesses} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-8">
         {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 border border-slate-800 p-6 lg:p-8 rounded-3xl shadow-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="glass-panel relative flex min-h-[210px] flex-col justify-between gap-6 overflow-hidden rounded-3xl p-6 md:flex-row md:items-center lg:p-9">
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(26,83,92,0.12),transparent_65%)]" />
 
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Multi-Business Workspace Command Center</span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-black text-white">
-              Welcome back, {user?.name || 'Admin'}!
+            <h1 className="text-3xl font-black text-[#2B2D42] lg:text-4xl">
+              Welcome, {user?.name || 'Admin'}
             </h1>
             <p className="text-xs lg:text-sm text-slate-400 max-w-xl">
               {user?.role === 'SUPER_ADMIN'
@@ -142,7 +142,7 @@ export default function DashboardOverviewPage() {
           {user?.role === 'SUPER_ADMIN' && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+              className="glass-button relative z-10 flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-xs font-extrabold"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               Create New Business Workspace
@@ -162,11 +162,11 @@ export default function DashboardOverviewPage() {
           {loading ? (
             <div className="py-16 text-center text-slate-500 text-sm">Loading workspaces...</div>
           ) : businesses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {businesses.map((biz) => (
                 <div
                   key={biz.id}
-                  className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl hover:border-slate-700 transition-all group flex flex-col justify-between"
+                  className="glass-panel group flex flex-col justify-between rounded-3xl p-5 transition-all hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(74,61,50,.14)] sm:p-6"
                 >
                   <div className="space-y-5">
                     {/* Header */}
@@ -193,7 +193,7 @@ export default function DashboardOverviewPage() {
                     </div>
 
                     {/* Business Summary Stats */}
-                    <div className="grid grid-cols-4 gap-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
+                    <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/70 bg-white/35 p-3 sm:grid-cols-4 sm:p-4">
                       <div>
                         <div className="flex items-center justify-between"><div className="text-[10px] uppercase font-bold text-slate-500">Investment</div>{user?.role === 'SUPER_ADMIN' && <button type="button" onClick={() => handleInvestment(biz)} className="p-1 text-purple-300 hover:text-white" title="Edit investment"><Pencil className="w-3.5 h-3.5" /></button>}</div>
                         <div className="text-sm lg:text-base font-extrabold text-purple-300 mt-1">{formatCurrency(biz.investment || 0)}</div>
@@ -221,11 +221,10 @@ export default function DashboardOverviewPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                    <span className="text-xs text-slate-500 font-medium">Isolated Data & Permissions Workspace</span>
+                  <div className="mt-6 flex items-center justify-end border-t border-white/70 pt-4">
                     <Link
                       href={`/dashboard/${biz.slug}`}
-                      className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C88A58] px-4 py-3 text-xs font-black uppercase text-white shadow-lg shadow-[#C88A58]/20 sm:w-auto"
                     >
                       <span>Open Workspace</span>
                       <ArrowRight className="w-3.5 h-3.5" />

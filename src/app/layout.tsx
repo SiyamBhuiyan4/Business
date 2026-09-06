@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import BlueprintAmbient from '@/components/BlueprintAmbient';
 
 export const metadata: Metadata = {
   title: 'Multi-Business Management Dashboard',
@@ -13,8 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-[#0b0f19] text-slate-100 min-h-screen font-sans antialiased">
-        {children}
+      <body className="min-h-screen font-sans antialiased">
+        <BlueprintAmbient />
+        <div className="relative z-10 min-h-screen">{children}</div>
       </body>
     </html>
   );
