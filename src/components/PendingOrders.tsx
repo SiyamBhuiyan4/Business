@@ -18,9 +18,11 @@ import {
   Eye,
   FileText,
   Search,
+  Upload,
 } from 'lucide-react';
 import { formatCurrency, formatDate, formatDateWithTime } from '@/lib/utils';
 import { format } from 'date-fns';
+import BulkImportModal from '@/components/BulkImportModal';
 
 interface PendingOrdersProps {
   businessId: string;
@@ -40,6 +42,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
 
   // Create Form State
   const [products, setProducts] = useState<any[]>([]);
@@ -213,6 +216,8 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
         </div>
 
         {permissions['orders:manage'] && (
+          <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setShowBulkModal(true)} className="order-action order-action-edit"><Upload className="mr-1 h-4 w-4"/> Import CSV</button>
           <button
             onClick={() => setShowCreateModal(true)}
             className="order-primary flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs"
@@ -220,6 +225,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
             <Plus className="w-4 h-4 stroke-[3]" />
             Create New Order
           </button>
+          </div>
         )}
       </div>
 
@@ -261,6 +267,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
           </select>
         </div>
       </div>
+      {showBulkModal && <BulkImportModal businessId={businessId} onClose={() => setShowBulkModal(false)} onComplete={() => { setShowBulkModal(false); fetchOrders(); onOrderChange?.(); }} />}
 
       {/* Orders List Table */}
       <div className="analytics-glass rounded-2xl overflow-hidden">

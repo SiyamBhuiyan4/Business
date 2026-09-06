@@ -70,7 +70,15 @@ body::before {
   pointer-events: none;
 }
 .theme-toggle { display:inline-flex;height:34px;width:34px;align-items:center;justify-content:center;border:1px solid rgba(226,232,240,.9);border-radius:10px;background:rgba(255,255,255,.82);color:#475569; }
-.theme-toggle:hover { color:#1A535C;box-shadow:0 0 18px rgba(56,189,248,.2); }
+  .theme-toggle:hover { color:#1A535C;box-shadow:0 0 18px rgba(56,189,248,.2); }
+  .bulk-modal { border:1px solid rgba(255,255,255,.95);background:rgba(255,255,255,.88);box-shadow:0 24px 60px rgba(15,23,42,.2);backdrop-filter:blur(20px); }
+  .bulk-dropzone { cursor:pointer;border:2px dashed rgba(200,138,88,.5);border-radius:18px;padding:32px;text-align:center;color:#475569;background:rgba(255,255,255,.55);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; }
+  .bulk-dropzone.is-dragging,.bulk-dropzone:hover { transform:scale(1.02);border-color:#C88A58;box-shadow:0 0 22px rgba(200,138,88,.2); }
+  .bulk-modal th,.bulk-modal td { padding:10px 12px;text-align:left;color:#334155;border-bottom:1px solid rgba(226,232,240,.8); }
+  .bulk-modal th { color:#0F172A;font-weight:800;background:rgba(241,245,249,.9); }
+  html.dark .bulk-modal { background:rgba(15,23,42,.9);border-color:rgba(56,189,248,.2); }
+  html.dark .bulk-dropzone { background:rgba(15,23,42,.7);color:#CBD5E1; }
+  html.dark .bulk-modal h3,html.dark .bulk-modal th,html.dark .bulk-modal td { color:#F8FAFC!important; }
 html.dark .theme-toggle { border-color:rgba(56,189,248,.22);background:rgba(15,23,42,.82);color:#F8FAFC; }
 html.dark .navbar-shell,html.dark .analytics-glass,html.dark .product-card,html.dark .admin-profile-card,html.dark .order-toolbar { background:rgba(15,23,42,.78)!important;border-color:rgba(56,189,248,.18)!important;box-shadow:0 12px 35px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04); }
 html.dark .navbar-brand-name,html.dark .navbar-user-name,html.dark .analytics-value,html.dark .product-title,html.dark .admin-stat-value,html.dark .admin-mini-value,html.dark .heatmap-value,html.dark .heatmap-revenue { color:#F8FAFC!important; }

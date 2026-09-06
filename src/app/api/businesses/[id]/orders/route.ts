@@ -93,7 +93,24 @@ export async function POST(
   if (!allowed) return NextResponse.json({ error: 'Forbidden: Missing orders:manage permission' }, { status: 403 });
 
   try {
-    const { customerName, customerContact, deliveryAddress, expectedDeliveryDate, items, notes } = await request.json();
+    const body = await request.json();
+    if (Array.isArray(body.bulkOrders)) {
+      const rows = body.bulkOrders;
+      if (!rows.length || rows.length > 500) return NextResponse.json({ error: 'Import must contain 1-500 valid rows' }, { status: 400 });
+      const products = await prisma.product.findMany({ where: { businessId: params.id } });
+      const productMap = new Map(products.flatMap((p) => [[p.id, p], ...(p.sku ? [[p.sku.toLowerCase(), p] as any] : []), [p.name.toLowerCase(), p] as any]));
+      const data = [];
+      for (const row of rows) {
+        const product: any = productMap.get(String(row.Product_SKU_Or_Name).trim().toLowerCase());
+        if (!product) return NextResponse.json({ error: `Product not found: ${row.Product_SKU_Or_Name}` }, { status: 400 });
+        const quantity = Number(row.Quantity); const price = row.Unit_Price_BDT ? Number(row.Unit_Price_BDT) : product.unitPrice;
+        if (!row.Customer_Name || !row.Contact_Number || !row.Delivery_Address || !Number.isInteger(quantity) || quantity < 1 || !Number.isFinite(price) || price < 0) return NextResponse.json({ error: 'Bulk row contains invalid required values' }, { status: 400 });
+        data.push({ businessId: params.id, createdByUserId: user.id, customerName: String(row.Customer_Name).trim(), customerContact: String(row.Contact_Number).trim(), deliveryAddress: String(row.Delivery_Address).trim(), expectedDeliveryDate: new Date(`${row.Expected_Delivery_Date}T12:00:00`), status: 'PENDING', orderType: 'SINGLE', totalAmount: quantity * price, notes: [row.Payment_Status ? `Payment: ${row.Payment_Status}` : '', row.Notes || ''].filter(Boolean).join(' — ') || null, items: { create: [{ productId: product.id, quantity, priceAtOrder: price }] } });
+      }
+      const created = await prisma.$transaction(data.map((order) => prisma.order.create({ data: order })));
+      return NextResponse.json({ created: created.length });
+    }
+    const { customerName, customerContact, deliveryAddress, expectedDeliveryDate, items, notes } = body;
 
     if (!customerName || !customerContact || !deliveryAddress || !expectedDeliveryDate || !items || !items.length) {
       return NextResponse.json({ error: 'Missing required order fields' }, { status: 400 });
