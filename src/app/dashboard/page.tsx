@@ -17,6 +17,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { InvestmentMetric, NetworkGlobe, OrdersMetric, ProductsMetric, SalesMetric } from '@/components/MetricVisuals';
 
 export default function DashboardOverviewPage() {
   const [user, setUser] = useState<any>(null);
@@ -122,9 +123,10 @@ export default function DashboardOverviewPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-8">
         {/* Welcome Header */}
         <div className="glass-panel relative flex min-h-[210px] flex-col justify-between gap-6 overflow-hidden rounded-3xl p-6 md:flex-row md:items-center lg:p-9">
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(26,83,92,0.12),transparent_65%)]" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-full md:w-1/2 bg-[radial-gradient(circle_at_center,rgba(26,83,92,0.15),transparent_65%)]" />
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-full max-w-[390px] opacity-90"><NetworkGlobe /></div>
 
-          <div className="space-y-2">
+          <div className="relative z-10 space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Multi-Business Workspace Command Center</span>
@@ -193,31 +195,11 @@ export default function DashboardOverviewPage() {
                     </div>
 
                     {/* Business Summary Stats */}
-                    <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/70 bg-white/35 p-3 sm:grid-cols-4 sm:p-4">
-                      <div>
-                        <div className="flex items-center justify-between"><div className="text-[10px] uppercase font-bold text-slate-500">Investment</div>{user?.role === 'SUPER_ADMIN' && <button type="button" onClick={() => handleInvestment(biz)} className="p-1 text-purple-300 hover:text-white" title="Edit investment"><Pencil className="w-3.5 h-3.5" /></button>}</div>
-                        <div className="text-sm lg:text-base font-extrabold text-purple-300 mt-1">{formatCurrency(biz.investment || 0)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] uppercase font-bold text-slate-500">Today's Sales</div>
-                        <div className="text-sm lg:text-base font-extrabold text-emerald-400 mt-1">
-                          {formatCurrency(biz.todaySales)}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-[10px] uppercase font-bold text-slate-500">Pending Orders</div>
-                        <div className="text-sm lg:text-base font-extrabold text-amber-400 mt-1">
-                          {biz.pendingOrdersCount} orders
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-[10px] uppercase font-bold text-slate-500">Products</div>
-                        <div className="text-sm lg:text-base font-extrabold text-slate-300 mt-1">
-                          {biz.totalProductsCount} items
-                        </div>
-                      </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+                      <div className="relative">{user?.role === 'SUPER_ADMIN' && <button type="button" onClick={() => handleInvestment(biz)} className="absolute right-2 top-2 z-10 p-1 text-[#A6633C]" title="Edit investment"><Pencil className="h-3 w-3" /></button>}<InvestmentMetric value={biz.investment || 0} /></div>
+                      <SalesMetric value={biz.todaySales || 0} />
+                      <OrdersMetric value={biz.pendingOrdersCount || 0} />
+                      <ProductsMetric value={biz.totalProductsCount || 0} />
                     </div>
                   </div>
 

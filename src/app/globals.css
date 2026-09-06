@@ -65,12 +65,31 @@ body::before {
     box-shadow: 0 18px 50px rgba(94, 74, 58, 0.09), inset 0 1px 0 rgba(255,255,255,.8);
     backdrop-filter: blur(18px);
   }
-  .glass-button {
+.glass-button {
     border: 1px solid rgba(255,255,255,.5);
     background: linear-gradient(135deg, var(--teal-bright), var(--teal));
     color: white;
     box-shadow: 0 8px 22px rgba(26,83,92,.2), inset 0 1px 0 rgba(255,255,255,.22);
   }
+  .metric-tile { position: relative; min-height: 126px; overflow: hidden; border: 1px solid rgba(255,255,255,.82); border-radius: 16px; padding: 12px; background: linear-gradient(135deg, rgba(255,255,255,.58), rgba(240,230,220,.36)); box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 7px 18px rgba(120,100,80,.06); backdrop-filter: blur(16px); }
+  .metric-label { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+  .metric-value { margin-top: 5px; font-size: 14px; font-weight: 900; line-height: 1.1; }
+  .metric-unit { margin-left: 3px; color: var(--muted); font-size: 9px; font-weight: 700; }
+  .metric-bars { position: absolute; right: 10px; bottom: 10px; display: flex; height: 48px; align-items: end; gap: 3px; opacity: .7; }
+  .metric-bars span { width: 5px; transform-origin: bottom; border-radius: 5px 5px 2px 2px; background: linear-gradient(#C88A58, #A6633C); animation: metric-bar .7s cubic-bezier(.2,.8,.2,1) both; }
+  .metric-spark { position: absolute; right: 7px; bottom: 8px; width: 72%; height: 48px; overflow: visible; }
+  .spark-fill { fill: url(#sales-fill); opacity: .8; }
+  .spark-line { fill: none; stroke: #226D68; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 180; stroke-dashoffset: 180; animation: spark-draw 1.2s ease forwards; }
+  .metric-spark circle { fill: #C88A58; filter: drop-shadow(0 0 4px rgba(200,138,88,.6)); }
+  .metric-gauge { position: absolute; right: 10px; bottom: 10px; width: 52px; height: 52px; display: grid; place-items: center; }
+  .metric-gauge svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .metric-gauge circle { fill: none; stroke-width: 4; }
+  .gauge-track { stroke: rgba(26,83,92,.12); }
+  .gauge-value { stroke: #226D68; stroke-linecap: round; stroke-dasharray: 0 100; animation: gauge-fill 1s ease forwards; }
+  .metric-gauge strong { color: #1A535C; font-size: 15px; }
+  .icon-matrix { position: absolute; right: 9px; bottom: 10px; display: grid; grid-template-columns: repeat(3, 18px); gap: 4px; }
+  .icon-matrix span { display: grid; place-items: center; height: 18px; width: 18px; border: 1px solid rgba(26,83,92,.16); border-radius: 5px; color: #1A535C; background: rgba(255,255,255,.5); }
+  .icon-matrix svg { height: 10px; width: 10px; }
 }
 
 /* Translate the existing shared Tailwind surfaces into the architectural glass system. */
@@ -107,6 +126,9 @@ tbody tr { transition: background-color .2s ease; }
 tbody tr:hover { background: rgba(255,255,255,.36); }
 
 @keyframes architectural-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes metric-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes spark-draw { to { stroke-dashoffset: 0; } }
+@keyframes gauge-fill { to { stroke-dasharray: var(--gauge-pct, 65) 100; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 
 button, input, select, textarea { font: inherit; }
