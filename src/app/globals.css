@@ -22,7 +22,11 @@ body {
   color: #f1f5f9;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
+
+button, input, select, textarea { font: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #a855f7; outline-offset: 2px; }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
