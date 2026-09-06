@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Store, Shield, LogOut, ChevronDown, UserCheck, Plus } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface NavbarProps {
   user: {
@@ -128,6 +129,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
             </div>
           </div>
 
+          <ThemeToggle />
           <button
             onClick={handleLogout}
             title="Log out"
