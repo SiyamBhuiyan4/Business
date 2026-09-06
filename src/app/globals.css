@@ -83,6 +83,18 @@ body::before {
   .analytics-value { color: #0F172A; font-size: 24px; font-weight: 800; line-height: 1.1; }
   .analytics-subtext { color: #64748B; font-size: 12px; font-weight: 500; }
   .analytics-icon { display: flex; height: 36px; width: 36px; align-items: center; justify-content: center; border-radius: 12px; color: white; }
+  .heatmap-tile { min-height: 116px; border: 1px solid rgba(226,232,240,.9); backdrop-filter: blur(12px); box-shadow: inset 0 1px 2px rgba(255,255,255,.8), 0 8px 18px rgba(120,100,80,.06); color: #0F172A; }
+  .heatmap-zero { background: rgba(255,255,255,.7); }
+  .heatmap-low { background: rgba(204,251,241,.85); border-color: #0D9488; }
+  .heatmap-medium { background: rgba(167,243,208,.9); border-color: #059669; }
+  .heatmap-high { background: rgba(254,215,170,.95); border-color: #D97706; }
+  .heatmap-legend { border: 1px solid rgba(255,255,255,.9); background: rgba(255,255,255,.85); }
+  .legend-dot { display: inline-flex; width: 15px; height: 15px; align-items: center; justify-content: center; border-radius: 5px; border-width: 1px; }
+  .heatmap-date { display: inline-flex; border-radius: 999px; background: rgba(15,23,42,.08); padding: 3px 6px; color: #334155; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .heatmap-weekday { color: #64748B; font-size: 11px; font-weight: 500; }
+  .heatmap-value { color: #0F172A; font-size: 13px; font-weight: 700; }
+  .heatmap-revenue { color: #0F172A; font-size: 12px; font-weight: 700; }
+  .heatmap-fire { color: #fff; background: #D97706; box-shadow: 0 0 12px rgba(217,119,6,.6); animation: flame-flicker 1.15s ease-in-out infinite; }
   .metric-tile { position: relative; min-height: 126px; overflow: hidden; border: 1px solid rgba(255,255,255,.92); border-radius: 16px; padding: 16px; background: rgba(255,255,255,.55); box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 9px 22px rgba(120,100,80,.08); backdrop-filter: blur(16px); }
   .metric-investment { background: rgba(254,243,199,.9); }
   .metric-sales { background: rgba(241,245,249,.94); }
@@ -145,6 +157,7 @@ tbody tr:hover { background: rgba(255,255,255,.36); }
 @keyframes metric-bar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes spark-draw { to { stroke-dashoffset: 0; } }
 @keyframes gauge-fill { to { stroke-dasharray: var(--gauge-pct, 65) 100; } }
+@keyframes flame-flicker { 0%, 100% { transform: translateY(0) rotate(-2deg); opacity: .88; } 50% { transform: translateY(-3px) rotate(3deg); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 
 button, input, select, textarea { font: inherit; }

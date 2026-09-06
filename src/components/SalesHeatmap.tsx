@@ -62,43 +62,41 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
 
   // Determine background color intensity scale based on order volume / revenue
   const getShadingClass = (count: number) => {
-    if (count === 0) return 'bg-slate-800/40 border-slate-800/60 text-slate-500';
-    if (count <= 2) return 'bg-emerald-950/60 border-emerald-800/60 text-emerald-300';
-    if (count <= 5) return 'bg-emerald-800/60 border-emerald-700/80 text-emerald-200';
-    if (count <= 10) return 'bg-emerald-600/80 border-emerald-500 text-white font-semibold';
-    return 'bg-gradient-to-tr from-amber-600 via-orange-500 to-red-500 border-amber-400 text-white font-black shadow-lg shadow-amber-500/20';
+    if (count === 0) return 'heatmap-tile heatmap-zero';
+    if (count <= 3) return 'heatmap-tile heatmap-low';
+    if (count <= 9) return 'heatmap-tile heatmap-medium';
+    return 'heatmap-tile heatmap-high';
   };
 
   return (
     <div className="space-y-6">
       {/* Header & Legend */}
-      <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-start justify-between gap-4">
+      <div className="analytics-glass p-5 rounded-2xl flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-lg font-bold text-slate-100">Sales Calendar Heatmap</h2>
+            <CalendarIcon className="w-5 h-5 text-[#0D9488]" />
+            <h2 className="text-[1.15rem] font-bold text-[#0F172A]">Sales Calendar Heatmap</h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Visualizing daily order volume intensity. Dates with <span className="text-amber-400 font-bold">&gt;10 orders</span> showcase the 🔥 Fire Icon badge!
+          <p className="text-xs text-[#475569] mt-1">
+            Daily delivered order volume. Peak days show a fire badge.
           </p>
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-3 bg-slate-950/60 px-4 py-2 rounded-xl border border-slate-800 text-xs">
-          <span className="text-slate-400 font-medium">Intensity:</span>
+        <div className="heatmap-legend flex flex-wrap items-center gap-3 px-4 py-2 rounded-xl text-xs">
+          <span className="text-[#334155] font-bold">Intensity:</span>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-slate-800 border border-slate-700" title="0 orders" />
-            <span className="w-3 h-3 rounded bg-emerald-950 border border-emerald-800" title="1-2 orders" />
-            <span className="w-3 h-3 rounded bg-emerald-800 border border-emerald-700" title="3-5 orders" />
-            <span className="w-3 h-3 rounded bg-emerald-600 border border-emerald-500" title="6-10 orders" />
-            <span className="w-3 h-3 rounded bg-amber-500 flex items-center justify-center text-[8px]" title=">10 orders">🔥</span>
+            <span className="legend-dot heatmap-zero" title="0 orders" />
+            <span className="legend-dot heatmap-low" title="1-3 orders" />
+            <span className="legend-dot heatmap-medium" title="4-9 orders" />
+            <span className="legend-dot heatmap-high" title=">10 orders">🔥</span>
           </div>
-          <span className="text-slate-400 text-[10px] ml-1">(Click any date to inspect)</span>
+          <span className="text-[#64748B] text-[10px] ml-1">Click a date to inspect</span>
         </div>
       </div>
 
       {/* Grid of Calendar Days */}
-      <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl shadow-xl">
+      <div className="analytics-glass p-6 rounded-2xl">
         {loading ? (
           <div className="py-16 text-center text-slate-500 text-sm">Loading calendar heatmap...</div>
         ) : (
@@ -120,7 +118,7 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
                   {/* Fire Icon Overlay */}
                   {day.hasFireIcon && (
                     <div
-                      className="absolute -top-2 -right-2 bg-gradient-to-tr from-amber-500 to-red-500 text-white p-1 rounded-full shadow-lg shadow-orange-500/50 animate-bounce"
+                      className="heatmap-fire absolute -top-2 -right-2 rounded-full p-1"
                       title="High Volume Day (>10 Orders!)"
                     >
                       <Flame className="w-4 h-4 fill-amber-200 stroke-amber-950" />
@@ -128,17 +126,17 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
                   )}
 
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px] uppercase tracking-wider font-semibold opacity-75">
+                    <span className="heatmap-date">
                       {monthName} {dayNum}
                     </span>
-                    <span className="text-[10px] font-mono opacity-60">{dayOfWeek}</span>
+                    <span className="heatmap-weekday">{dayOfWeek}</span>
                   </div>
 
                   <div className="mt-3 text-left">
-                    <div className="text-xs font-bold truncate">
+                    <div className="heatmap-value truncate">
                       {day.orderCount > 0 ? `${day.orderCount} Orders` : 'No Sales'}
                     </div>
-                    <div className="text-[11px] opacity-90 font-mono">
+                    <div className="heatmap-revenue">
                       {formatCurrency(day.revenue)}
                     </div>
                   </div>
