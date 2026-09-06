@@ -66,14 +66,14 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
               </button>
 
               {dropdownOpen && (
-                <div className="absolute left-0 mt-2 w-56 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-3 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <div className="navbar-dropdown absolute left-0 mt-2 w-64 rounded-2xl py-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider">
                     Workspaces
                   </div>
                   <Link
                     href={workspaceBase}
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60"
+                    className="navbar-dropdown-item flex items-center gap-2.5 px-3 py-2 text-sm"
                   >
                     <Store className="w-4 h-4 text-slate-400" />
                     All Businesses Overview
@@ -86,8 +86,8 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
                       onClick={() => setDropdownOpen(false)}
                       className={`flex items-center justify-between px-3 py-2 text-sm transition-colors ${
                         biz.slug === currentBusinessSlug
-                          ? 'bg-emerald-500/10 text-emerald-400 font-medium'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                        ? 'navbar-dropdown-active font-semibold'
+                          : 'navbar-dropdown-item'
                       }`}
                     >
                       <span className="truncate">{biz.name}</span>
