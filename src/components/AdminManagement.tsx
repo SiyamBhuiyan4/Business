@@ -118,7 +118,19 @@ export default function AdminManagement() {
         }),
       });
 
-      if (res.ok) await fetchData();
+      if (res.ok) {
+        const assigned = !isCurrentlyAssigned;
+        setSelectedAdmin((current: any) => current && current.id === adminId ? {
+          ...current,
+          businessAccess: assigned
+            ? [...current.businessAccess, { businessId, business: businesses.find((b) => b.id === businessId) }]
+            : current.businessAccess.filter((x: any) => x.businessId !== businessId),
+          permissions: assigned
+            ? [...current.permissions, ...PERMISSION_LIST.map((p) => ({ businessId, permissionKey: p.key, enabled: p.defaultForAdmin }))]
+            : current.permissions.filter((x: any) => x.businessId !== businessId),
+        } : current);
+        await fetchData();
+      }
       else { const json = await res.json().catch(() => ({})); alert(json.error || 'Failed to update workspace access'); }
     } catch (err) {
       console.error('Failed to toggle business access:', err);
@@ -248,7 +260,7 @@ export default function AdminManagement() {
                         </div>
 
                         <button
-                          onClick={() => handleToggleBusinessAccess(adm.id, biz.id, isAssigned)}
+                          onClick={(e) => { e.stopPropagation(); handleToggleBusinessAccess(adm.id, biz.id, isAssigned); }}
                           disabled={accessUpdating === `${adm.id}:${biz.id}`}
                           className={`text-xs font-bold px-3 py-1 rounded-lg border transition-all ${
                             isAssigned
@@ -267,7 +279,7 @@ export default function AdminManagement() {
                             return (
                               <div
                                 key={perm.key}
-                                onClick={() =>
+                                onClick={(e) => { e.stopPropagation();
                                   handleTogglePermission(
                                     adm.id,
                                     biz.id,
@@ -275,7 +287,7 @@ export default function AdminManagement() {
                                     isEnabled,
                                     adm.permissions
                                   )
-                                }
+                                }}
                                 className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
                                   isEnabled
                                     ? 'bg-slate-900 border-purple-500/40 text-purple-200'
