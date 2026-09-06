@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { InvestmentMetric, NetworkGlobe, OrdersMetric, ProductsMetric, SalesMetric } from '@/components/MetricVisuals';
-import SpotlightCard from '@/components/SpotlightCard';
 
 export default function DashboardOverviewPage() {
   const [user, setUser] = useState<any>(null);
@@ -167,7 +166,7 @@ export default function DashboardOverviewPage() {
           ) : businesses.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {businesses.map((biz) => (
-                <SpotlightCard
+                <div
                   key={biz.id}
                   className="glass-panel group flex flex-col justify-between rounded-3xl p-5 transition-all hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(74,61,50,.14)] sm:p-6"
                 >
@@ -213,7 +212,7 @@ export default function DashboardOverviewPage() {
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
-                </SpotlightCard>
+                </div>
               ))}
             </div>
           ) : (
