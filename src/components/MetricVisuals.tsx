@@ -33,14 +33,14 @@ export function InvestmentMetric({ value }: { value: number }) {
 }
 
 export function SalesMetric({ value }: { value: number }) {
-  return <Tile><div className="metric-label">Today&apos;s Sales</div><div className="metric-value text-[#1A535C]">{formatCurrency(value || 0)}</div><svg className="metric-spark" viewBox="0 0 130 42" role="img" aria-label="Sales trend"><defs><linearGradient id="sales-fill" x1="0" x2="0" y1="0" y2="1"><stop stopColor="#226D68" stopOpacity=".28" /><stop offset="1" stopColor="#226D68" stopOpacity="0" /></linearGradient></defs><path className="spark-fill" d="M2 35 C18 28 20 31 34 24 S54 27 66 16 S83 22 95 11 S113 15 128 4 V42 H2Z" /><path className="spark-line" d="M2 35 C18 28 20 31 34 24 S54 27 66 16 S83 22 95 11 S113 15 128 4" /><circle cx="128" cy="4" r="3" /></svg></Tile>;
+  return <Tile className="metric-sales"><div className="metric-label">Today&apos;s Sales</div><div className="metric-value">{formatCurrency(value || 0)}</div><svg className="metric-spark" viewBox="0 0 130 42" role="img" aria-label="Sales trend"><path className="spark-fill" d="M2 35 C18 28 20 31 34 24 S54 27 66 16 S83 22 95 11 S113 15 128 4 V42 H2Z" /><path className="spark-line" d="M2 35 C18 28 20 31 34 24 S54 27 66 16 S83 22 95 11 S113 15 128 4" /><circle cx="128" cy="4" r="3" /></svg></Tile>;
 }
 
 export function OrdersMetric({ value }: { value: number }) {
   const pct = Math.min(100, Math.max(8, (value || 0) * 14));
-  return <Tile><div className="metric-label">Pending Orders</div><div className="metric-gauge"><svg viewBox="0 0 42 42"><circle className="gauge-track" cx="21" cy="21" r="16" /><circle className="gauge-value" cx="21" cy="21" r="16" style={{ '--gauge-pct': `${pct}` } as React.CSSProperties} /></svg><strong>{value || 0}</strong></div></Tile>;
+  return <Tile className="metric-orders"><div className="metric-label">Pending Orders <span aria-hidden="true" className="text-[#D97706]">⚠</span></div><div className="metric-gauge"><svg viewBox="0 0 42 42"><circle className="gauge-track" cx="21" cy="21" r="16" /><circle className="gauge-value" cx="21" cy="21" r="16" style={{ '--gauge-pct': `${pct}` } as React.CSSProperties} /></svg><strong>{value || 0}</strong></div></Tile>;
 }
 
 export function ProductsMetric({ value }: { value: number }) {
-  return <Tile><div className="metric-label">Products</div><div className="metric-value text-[#2B2D42]">{value || 0}<span className="metric-unit">items</span></div><div className="icon-matrix">{[Boxes, Package, ShoppingBag, Boxes, Package, ShoppingBag].map((Icon, i) => <span key={i}><Icon /></span>)}</div></Tile>;
+  return <Tile className="metric-products"><div className="metric-label">Products</div><div className="metric-value">{value || 0}<span className="metric-unit">items</span></div><div className="icon-matrix">{[Boxes, Package, ShoppingBag, Boxes, Package, ShoppingBag].map((Icon, i) => <span key={i}><Icon /></span>)}</div></Tile>;
 }
