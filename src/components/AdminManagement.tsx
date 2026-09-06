@@ -345,7 +345,87 @@ export default function AdminManagement() {
         </div>
       )}
 
-      {selectedAdmin && <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-end" onClick={() => setSelectedAdmin(null)}><aside className="h-full w-full max-w-xl bg-slate-900 border-l border-slate-700 p-4 sm:p-6 overflow-y-auto" onClick={(e) => e.stopPropagation()}><div className="flex justify-between items-start gap-4"><div className="min-w-0"><p className="text-xs uppercase tracking-widest text-purple-300">Manage access</p><h2 className="truncate text-2xl font-black text-white">{selectedAdmin.name}</h2><p className="text-sm text-slate-400">Assign workspaces and toggle permissions below.</p></div><button onClick={() => setSelectedAdmin(null)} title="Close" className="shrink-0 p-2 rounded-xl bg-slate-800"><X className="w-5 h-5" /></button></div><div className="mt-8 space-y-4">{businesses.map((biz) => { const assigned = selectedAdmin.businessAccess.some((x: any) => x.businessId === biz.id); const expanded = expandedWorkspaces[biz.id] === true; return <div key={biz.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4"><div className="flex items-center justify-between gap-3"><button type="button" onClick={() => assigned && setExpandedWorkspaces((state) => ({ ...state, [biz.id]: !expanded }))} className="min-w-0 flex items-center gap-2 text-left"><span className="truncate font-bold text-sm text-slate-200">{biz.name}</span>{assigned && <span className="shrink-0 text-[10px] text-slate-500">{expanded ? 'Hide' : 'Details'}</span>}</button><button onClick={() => handleToggleBusinessAccess(selectedAdmin.id, biz.id, assigned)} disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`} className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold ${assigned ? 'bg-emerald-500/20 text-emerald-300' : 'bg-purple-500 text-slate-950'}`}>{accessUpdating === `${selectedAdmin.id}:${biz.id}` ? 'Saving...' : assigned ? 'Assigned' : 'Assign'}</button></div>{assigned && expanded && <div className="mt-3 space-y-2">{PERMISSION_LIST.map((perm) => { const row = selectedAdmin.permissions.find((x: any) => x.businessId === biz.id && x.permissionKey === perm.key); const enabled = row ? row.enabled : perm.defaultForAdmin; return <button type="button" key={perm.key} onClick={() => handleTogglePermission(selectedAdmin.id, biz.id, perm.key, enabled, selectedAdmin.permissions)} className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-left ${enabled ? 'border-purple-500/40 bg-purple-500/10 text-purple-200' : 'border-slate-800 bg-slate-900 text-slate-500'}`}><span className="min-w-0 truncate text-xs font-bold">{perm.label}</span><span className={`shrink-0 h-4 w-8 rounded-full p-0.5 ${enabled ? 'bg-purple-500 text-right' : 'bg-slate-700 text-left'}`}><span className="inline-block h-3 w-3 rounded-full bg-white" /></span></button>; })}</div>}</div>; })}</div></aside></div>}
+      {selectedAdmin && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/80 backdrop-blur-sm" onClick={() => setSelectedAdmin(null)}>
+          <aside className="h-full w-full max-w-xl overflow-y-auto border-l border-slate-700 bg-slate-900 p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-widest text-purple-300">Admin profile</p>
+                <h2 className="break-words text-2xl font-black text-white">{selectedAdmin.name}</h2>
+                <p className="break-all text-sm text-slate-400">{selectedAdmin.email || selectedAdmin.username}</p>
+              </div>
+              <button onClick={() => setSelectedAdmin(null)} title="Close" className="shrink-0 rounded-xl bg-slate-800 p-2 text-slate-300 hover:bg-slate-700 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <button type="button" onClick={() => setEditMode((value) => !value)} className="flex items-center justify-center gap-2 rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-purple-400">
+                <Pencil className="h-4 w-4" /> {editMode ? 'Close Editor' : 'Edit Admin'}
+              </button>
+              <button type="button" onClick={() => updateAdmin(!selectedAdmin.active)} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold ${selectedAdmin.active ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25' : 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25'}`}>
+                {selectedAdmin.active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                {selectedAdmin.active ? 'Deactivate' : 'Activate'}
+              </button>
+              <button type="button" onClick={() => updateAdmin(selectedAdmin.active, true)} className="flex items-center justify-center gap-2 rounded-xl bg-red-500/15 px-4 py-2.5 text-sm font-bold text-red-300 hover:bg-red-500/25">
+                <Trash2 className="h-4 w-4" /> Delete
+              </button>
+            </div>
+
+            {editMode && (
+              <div className="mt-4 space-y-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 p-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-1.5 text-sm font-semibold text-slate-300">Name<input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
+                  <label className="space-y-1.5 text-sm font-semibold text-slate-300">Username<input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
+                </div>
+                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">Email<input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
+                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">New password <span className="font-normal text-slate-500">(optional)</span><input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Keep blank to leave unchanged" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none placeholder:text-slate-600 focus:border-purple-400" /></label>
+                <button type="button" onClick={() => updateAdmin()} disabled={!editName.trim() || !editUsername.trim()} className="w-full rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-black text-slate-950 hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50">Save Changes</button>
+              </div>
+            )}
+
+            <div className="mt-8">
+              <div className="mb-4">
+                <h3 className="font-black text-white">Workspace access</h3>
+                <p className="text-sm text-slate-400">Assign a workspace, then open Details to manage its permissions.</p>
+              </div>
+              <div className="space-y-4">
+                {businesses.map((biz) => {
+                  const assigned = selectedAdmin.businessAccess.some((x: any) => x.businessId === biz.id);
+                  const expanded = expandedWorkspaces[biz.id] === true;
+                  return (
+                    <div key={biz.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <button type="button" onClick={() => assigned && setExpandedWorkspaces((state) => ({ ...state, [biz.id]: !expanded }))} className="flex min-w-0 items-center gap-2 text-left">
+                          <span className="break-words text-sm font-bold text-slate-200">{biz.name}</span>
+                          {assigned && <span className="shrink-0 text-[10px] text-slate-500">{expanded ? 'Hide' : 'Details'}</span>}
+                        </button>
+                        <button onClick={() => handleToggleBusinessAccess(selectedAdmin.id, biz.id, assigned)} disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`} className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-60 ${assigned ? 'bg-emerald-500/20 text-emerald-300' : 'bg-purple-500 text-slate-950'}`}>
+                          {accessUpdating === `${selectedAdmin.id}:${biz.id}` ? 'Saving...' : assigned ? 'Assigned' : 'Assign'}
+                        </button>
+                      </div>
+                      {assigned && expanded && (
+                        <div className="mt-3 space-y-2">
+                          {PERMISSION_LIST.map((perm) => {
+                            const row = selectedAdmin.permissions.find((x: any) => x.businessId === biz.id && x.permissionKey === perm.key);
+                            const enabled = row ? row.enabled : perm.defaultForAdmin;
+                            return (
+                              <button type="button" key={perm.key} disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`} onClick={() => handleTogglePermission(selectedAdmin.id, biz.id, perm.key, enabled, selectedAdmin.permissions)} className={`flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left disabled:opacity-60 ${enabled ? 'border-purple-500/40 bg-purple-500/10 text-purple-200' : 'border-slate-800 bg-slate-900 text-slate-500'}`}>
+                                <span className="min-w-0 break-words text-xs font-bold">{perm.label}</span>
+                                <span className={`h-4 w-8 shrink-0 rounded-full p-0.5 ${enabled ? 'bg-purple-500 text-right' : 'bg-slate-700 text-left'}`}><span className="inline-block h-3 w-3 rounded-full bg-white" /></span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* Create Admin Modal */}
       {showCreateModal && (
