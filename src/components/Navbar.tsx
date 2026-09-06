@@ -37,15 +37,15 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
 
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 lg:px-8">
-      <div className="glass-panel mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-2xl px-3 py-2.5 sm:px-4 min-w-0">
+      <div className="navbar-shell mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-2xl px-3 py-2.5 sm:px-4 min-w-0">
         {/* Left: Brand Logo & Business Switcher */}
         <div className="flex items-center gap-3 min-w-0">
           <Link href={workspaceBase} className="flex items-center gap-2.5 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1A535C] text-white shadow-lg shadow-teal-900/20 transition-transform group-hover:scale-105">
+            <div className="navbar-brand-icon flex h-10 w-10 items-center justify-center rounded-xl text-white transition-transform group-hover:scale-105">
               <Store className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-lg font-extrabold tracking-tight text-[#2B2D42]">
+              <span className="navbar-brand-name text-lg font-extrabold tracking-tight">
                 Rise
               </span>
             </div>
@@ -56,13 +56,13 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex max-w-[210px] items-center gap-2 rounded-xl border border-white/70 bg-white/45 px-3 py-2 text-sm font-semibold text-[#2B2D42] shadow-sm sm:max-w-none"
+                className="navbar-workspace flex max-w-[210px] items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold sm:max-w-none"
               >
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#5ED3A5] shadow-[0_0_0_3px_rgba(94,211,165,.15)]" />
                 <span className="max-w-[150px] sm:max-w-[220px] truncate">
                   {currentBusiness ? currentBusiness.name : 'Select Business'}
                 </span>
-                <ChevronDown className="w-4 h-4 text-slate-400 ml-1" />
+                <ChevronDown className="ml-1 h-4 w-4 text-[#7C8798]" />
               </button>
 
               {dropdownOpen && (
@@ -107,7 +107,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
           {user?.role === 'SUPER_ADMIN' && (
             <Link
               href="/dashboard/admins"
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+              className={`navbar-permissions flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
                 pathname === '/dashboard/admins'
                   ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
                   : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
@@ -119,10 +119,10 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
           )}
 
           <div className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/45 px-2 py-1.5 sm:px-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C88A58] text-[10px] font-black text-white">{user?.role === 'SUPER_ADMIN' ? 'SA' : 'A'}</span>
+            <span className="navbar-avatar flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black text-white">{user?.role === 'SUPER_ADMIN' ? 'SA' : 'A'}</span>
             <div className="text-left hidden sm:block">
-              <div className="text-xs font-semibold text-slate-200">{user?.name}</div>
-              <div className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider">
+              <div className="navbar-user-name text-xs font-semibold">{user?.name} {user?.role === 'SUPER_ADMIN' && <span className="navbar-owner">(Owner)</span>}</div>
+              <div className="navbar-user-role text-[10px] font-mono uppercase tracking-wider">
                 {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
           <button
             onClick={handleLogout}
             title="Log out"
-            className="p-2 rounded-lg bg-slate-800/60 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700/60 hover:border-rose-500/40 transition-colors"
+            className="navbar-logout rounded-xl p-2 transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>

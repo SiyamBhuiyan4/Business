@@ -125,6 +125,18 @@ body::before {
   .admin-mini-value { margin-top: 4px; color: #0F172A; font-size: 14px; font-weight: 800; }
   .admin-tab-active { background: #1A535C; color: #fff; font-weight: 700; }
   .admin-tab { background: rgba(15,23,42,.05); color: #334155; }
+  .navbar-shell { border: 1px solid rgba(255,255,255,.92); background: rgba(255,255,255,.78); box-shadow: 0 8px 25px rgba(120,100,80,.08), inset 0 1px 0 rgba(255,255,255,.9); backdrop-filter: blur(18px); }
+  .navbar-brand-icon { background: #1A535C; box-shadow: 0 8px 18px rgba(26,83,92,.24); }
+  .navbar-brand-name { color: #2B2D42; }
+  .navbar-workspace { border: 1px solid rgba(226,232,240,.9); background: rgba(248,250,252,.8); color: #334155; box-shadow: inset 0 1px 0 rgba(255,255,255,.9); }
+  .navbar-permissions { border: 1px solid rgba(226,232,240,.9); background: rgba(255,255,255,.86); color: #334155; }
+  .navbar-permissions:hover { color: #1A535C; border-color: rgba(26,83,92,.28); }
+  .navbar-avatar { background: #C88A58; box-shadow: 0 3px 8px rgba(166,99,60,.2); }
+  .navbar-user-name { color: #334155; }
+  .navbar-owner { color: #64748B; font-weight: 600; }
+  .navbar-user-role { color: #1A535C; }
+  .navbar-logout { border: 1px solid rgba(226,232,240,.9); background: rgba(255,255,255,.82); color: #64748B; }
+  .navbar-logout:hover { color: #B91C1C; border-color: rgba(239,68,68,.35); background: rgba(254,226,226,.7); }
   .heatmap-tile { min-height: 116px; border: 1px solid rgba(226,232,240,.9); backdrop-filter: blur(12px); box-shadow: inset 0 1px 2px rgba(255,255,255,.8), 0 8px 18px rgba(120,100,80,.06); color: #0F172A; }
   .heatmap-zero { background: rgba(255,255,255,.7); }
   .heatmap-low { background: rgba(204,251,241,.85); border-color: #0D9488; }
