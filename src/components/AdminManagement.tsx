@@ -192,7 +192,7 @@ export default function AdminManagement() {
           <p className="text-xs text-slate-400 mt-1">
             Assign workspaces and control permissions for every admin from one place.
           </p>
-          <p className="text-[11px] text-purple-300 mt-2">Select an admin, then use Manage Access to assign workspaces and toggle permissions.</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-400"><span className="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1">Profile-based access</span><span className="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1">Workspace-scoped permissions</span></div>
         </div>
 
         <button
@@ -217,33 +217,34 @@ export default function AdminManagement() {
       {loading ? (
         <div className="py-16 text-center text-slate-500 text-sm">Loading admin permission profiles...</div>
       ) : admins.length > 0 ? (
-        <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2">
           {admins.filter((adm) => `${adm.name} ${adm.username || ''} ${adm.email}`.toLowerCase().includes(adminQuery.toLowerCase())).map((adm) => (
             <div
               key={adm.id}
               onClick={() => openAdmin(adm)}
-              className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 cursor-pointer hover:border-purple-500/50 transition-all"
+              className="group bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl cursor-pointer hover:-translate-y-0.5 hover:border-purple-500/60 hover:shadow-purple-950/20 transition-all"
             >
               {/* Admin Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/30 to-emerald-500/20 text-purple-300 font-bold text-lg flex items-center justify-center">
+              <div className="flex items-start justify-between gap-3 pb-5 border-b border-slate-800">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-400 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-purple-950/30">
                     {adm.name.charAt(0)}
                   </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-100">{adm.name}</h3>
-                    <div className="text-xs font-mono text-slate-400">{adm.email}</div><div className="text-[10px] text-slate-500 mt-1">Joined {new Date(adm.createdAt).toLocaleDateString()}</div>
+                  <div className="min-w-0">
+                    <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-purple-300">Administrator</div>
+                    <h3 className="truncate text-base font-bold text-slate-100">{adm.name}</h3>
+                    <div className="truncate text-xs text-slate-400">{adm.email}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${adm.active === false ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}`}>
-                    {adm.active === false ? 'Inactive' : 'Active'} · Assigned Workspaces: {adm.businessAccess.length}
+                <div className="shrink-0">
+                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold ${adm.active === false ? 'border-rose-500/30 bg-rose-500/10 text-rose-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'}`}>
+                    {adm.active === false ? 'Inactive' : 'Active'}
                   </span>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500 text-slate-950 text-xs font-bold hover:bg-purple-400 transition-colors">
-                    <Key className="w-3.5 h-3.5" /> Manage Access
-                  </button>
                 </div>
               </div>
+
+              <div className="grid grid-cols-3 gap-2 py-4"><div className="rounded-xl bg-slate-950/60 px-3 py-2.5"><div className="text-[10px] uppercase tracking-wider text-slate-500">Workspaces</div><div className="mt-1 font-bold text-white">{adm.businessAccess.length}</div></div><div className="rounded-xl bg-slate-950/60 px-3 py-2.5"><div className="text-[10px] uppercase tracking-wider text-slate-500">Enabled</div><div className="mt-1 font-bold text-emerald-300">{adm.permissions.filter((p: any) => p.enabled).length}</div></div><div className="rounded-xl bg-slate-950/60 px-3 py-2.5"><div className="text-[10px] uppercase tracking-wider text-slate-500">Joined</div><div className="mt-1 truncate font-bold text-slate-200">{new Date(adm.createdAt).toLocaleDateString()}</div></div></div>
+              <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap gap-1.5">{adm.businessAccess.slice(0, 2).map((x: any) => <span key={x.businessId} className="max-w-[150px] truncate rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">{x.business.name}</span>)}{adm.businessAccess.length > 2 && <span className="rounded-full border border-slate-700 px-2.5 py-1 text-[10px] text-slate-400">+{adm.businessAccess.length - 2} more</span>}</div><button type="button" onClick={(e) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-purple-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-purple-400 transition-colors"><Key className="w-3.5 h-3.5" /> Manage</button></div>
 
               {/* Per Business Permissions Breakdown */}
               <div className="space-y-4">
