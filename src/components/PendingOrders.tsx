@@ -201,7 +201,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
   return (
     <div className="space-y-6">
       {/* Header & Control Bar */}
-      <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="analytics-glass p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-emerald-400" />
@@ -215,7 +215,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
         {permissions['orders:manage'] && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+            className="order-primary flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             Create New Order
@@ -224,7 +224,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="order-toolbar flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl">
         {/* Search */}
         <div className="relative flex-1 min-w-[220px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -233,21 +233,21 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
             placeholder="Search by customer, contact, or ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+            className="order-search w-full rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Status Tabs */}
-          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <div className="order-tabs flex p-1 rounded-xl">
             {['PENDING', 'IN_PROGRESS', 'DELIVERED', 'CANCELLED', 'ALL'].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   statusFilter === st
-                    ? 'bg-slate-800 text-white shadow-md'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'order-tab-active text-white shadow-md'
+                    : 'text-[#475569] hover:bg-slate-900/5'
                 }`}
               >
                 {st.replace('_', ' ')}
@@ -255,7 +255,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
             ))}
           </div>
 
-          <select value={createdByFilter} onChange={(e) => setCreatedByFilter(e.target.value)} className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2">
+          <select value={createdByFilter} onChange={(e) => setCreatedByFilter(e.target.value)} className="order-search text-[#0F172A] text-xs rounded-xl px-3 py-2">
             <option value="ALL">All creators</option>
             {Array.from(new Map(orders.filter((o) => o.createdByUser).map((o) => [o.createdByUser.id, o.createdByUser])).values()).map((creator: any) => <option key={creator.id} value={creator.id}>{creator.name}</option>)}
           </select>
@@ -263,13 +263,13 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
       </div>
 
       {/* Orders List Table */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <div className="analytics-glass rounded-2xl overflow-hidden">
         {loading ? (
           <div className="py-16 text-center text-slate-500 text-sm">Loading orders...</div>
         ) : filteredOrders.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <thead className="order-table-head uppercase tracking-wider font-bold border-b border-slate-200">
                 <tr>
                   <th className="px-5 py-3.5">Customer / Contact</th>
                   <th className="px-5 py-3.5">Expected Delivery</th>
@@ -283,11 +283,11 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                 {filteredOrders.map((ord) => (
                   <tr
                     key={ord.id}
-                    className="hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                    className="order-row transition-colors group cursor-pointer"
                     onClick={() => setSelectedOrder(ord)}
                   >
                     <td className="px-5 py-4">
-                      <div className="font-bold text-slate-100 text-sm">{ord.customerName}</div>
+                      <div className="font-bold text-[#0F172A] text-sm">{ord.customerName}</div>
                       <div className="text-slate-400 flex items-center gap-1.5 mt-0.5">
                         <Phone className="w-3 h-3 text-slate-500" />
                         {ord.customerContact}
@@ -320,7 +320,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                     </td>
 
                     <td className="px-5 py-4">
-                      <div className="font-extrabold text-sm text-emerald-400">
+                      <div className="font-extrabold text-sm text-[#0F172A]">
                         {formatCurrency(ord.totalAmount)}
                       </div>
                     </td>
@@ -332,12 +332,12 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                           onChange={(e) => handleUpdateStatus(ord.id, e.target.value)}
                           className={`text-xs font-bold rounded-lg px-2.5 py-1 border focus:outline-none cursor-pointer ${
                             ord.status === 'DELIVERED'
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              ? 'order-status-delivered'
                               : ord.status === 'CANCELLED'
-                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                              ? 'order-status-cancelled'
                               : ord.status === 'IN_PROGRESS'
-                              ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
-                              : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              ? 'order-status-progress'
+                              : 'order-status-pending'
                           }`}
                         >
                           <option value="PENDING" className="bg-slate-900 text-amber-300">PENDING</option>
@@ -363,14 +363,14 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                     <td className="px-5 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setSelectedOrder(ord)}
-                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                        className="order-action order-action-view"
                         title="View details"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       {permissions['orders:manage'] && <>
-                        <button onClick={() => handleEditOrder(ord)} className="ml-1 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300" title="Edit order">Edit</button>
-                        <button onClick={() => handleDeleteOrder(ord)} className="ml-1 p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-rose-400" title="Delete order">Delete</button>
+                        <button onClick={() => handleEditOrder(ord)} className="order-action order-action-edit ml-1" title="Edit order">Edit</button>
+                        <button onClick={() => handleDeleteOrder(ord)} className="order-action order-action-delete ml-1" title="Delete order">Delete</button>
                       </>}
                     </td>
                   </tr>
