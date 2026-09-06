@@ -130,6 +130,7 @@ export default function AdminManagement() {
             : current.permissions.filter((x: any) => x.businessId !== businessId),
         } : current);
         await fetchData();
+        if (!isCurrentlyAssigned) alert('Workspace access assigned successfully.');
       }
       else { const json = await res.json().catch(() => ({})); alert(json.error || 'Failed to update workspace access'); }
     } catch (err) {

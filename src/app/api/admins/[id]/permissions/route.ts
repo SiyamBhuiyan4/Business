@@ -36,6 +36,10 @@ export async function PUT(
       return NextResponse.json({ success: true });
     }
 
+    if (isAssigned !== true) {
+      return NextResponse.json({ error: 'isAssigned must be true or false' }, { status: 400 });
+    }
+
     // Ensure access record exists
     await prisma.adminBusinessAccess.upsert({
       where: {
@@ -69,7 +73,11 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json({ success: true });
+    const access = await prisma.adminBusinessAccess.findUnique({
+      where: { userId_businessId: { userId: params.id, businessId } },
+      include: { business: true },
+    });
+    return NextResponse.json({ success: true, access });
   } catch (error) {
     console.error('Update permissions error:', error);
     return NextResponse.json({ error: 'Failed to update permissions' }, { status: 500 });
