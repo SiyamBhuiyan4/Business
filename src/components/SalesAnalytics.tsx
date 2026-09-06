@@ -18,6 +18,7 @@ import {
 import { Calendar, TrendingUp, ShoppingBag, DollarSign, RefreshCw, Wallet, Pencil, X, Users } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { format, subDays } from 'date-fns';
+import TiltCard from '@/components/TiltCard';
 
 interface SalesAnalyticsProps {
   businessId: string;
@@ -198,14 +199,13 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <button type="button" onClick={openInvestmentBreakdown} className="analytics-kpi analytics-kpi-investment text-left p-5 rounded-2xl relative overflow-hidden group">
+        <TiltCard><button type="button" onClick={openInvestmentBreakdown} className="analytics-kpi analytics-kpi-investment h-full w-full text-left p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl" />
           <div className="flex items-center justify-between"><span className="analytics-label">Total Invested</span><div className="analytics-icon bg-[#C88A58]"><Wallet className="w-5 h-5" /></div></div>
           <div className="mt-3 flex items-center gap-2"><div className="analytics-value">{formatCurrency(investmentTotal)}</div></div>
-          <div className="analytics-subtext mt-1">Business investment (BDT)</div>
-          <span className="absolute bottom-4 right-4 text-[10px] font-semibold text-slate-500 group-hover:text-cyan-400">Click to view admins</span>
-        </button>
-        <button type="button" onClick={openRevenueBreakdown} className="analytics-kpi analytics-kpi-revenue text-left p-5 rounded-2xl relative overflow-hidden group">
+          <div className="analytics-subtext mt-1">Business investment (BDT)</div><span className="analytics-drilldown">View admin breakdown</span>
+        </button></TiltCard>
+        <TiltCard><button type="button" onClick={openRevenueBreakdown} className="analytics-kpi analytics-kpi-revenue h-full w-full text-left p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all" />
           <div className="flex items-center justify-between">
             <span className="analytics-label">Total Sales Revenue</span>
@@ -221,10 +221,10 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
               Selected Period Revenue (BDT)
             </div>
           </div>
-          <span className="absolute bottom-4 right-4 text-[10px] font-semibold text-slate-500 group-hover:text-emerald-400">Click to view admins</span>
-        </button>
+          <span className="analytics-drilldown">View admin breakdown</span>
+        </button></TiltCard>
 
-        <div className="analytics-kpi analytics-kpi-orders p-5 rounded-2xl relative overflow-hidden group">
+        <TiltCard><div className="analytics-kpi analytics-kpi-orders h-full p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all" />
           <div className="flex items-center justify-between">
             <span className="analytics-label">Total Orders</span>
@@ -240,9 +240,9 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
               Completed & Pending Orders
             </div>
           </div>
-        </div>
+        </div></TiltCard>
 
-        <div className="analytics-kpi analytics-kpi-average p-5 rounded-2xl relative overflow-hidden group">
+        <TiltCard><div className="analytics-kpi analytics-kpi-average h-full p-5 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all" />
           <div className="flex items-center justify-between">
             <span className="analytics-label">Avg Order Value</span>
@@ -258,7 +258,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
               Average per Order
             </div>
           </div>
-        </div>
+        </div></TiltCard>
       </div>
 
       {showInvestment && (
