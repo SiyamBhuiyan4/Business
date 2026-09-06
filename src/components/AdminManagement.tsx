@@ -183,21 +183,21 @@ export default function AdminManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      <div className="analytics-glass border p-5 sm:p-6 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div>
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-purple-400" />
-            <h2 className="text-xl font-black text-slate-100">Admin Access Center</h2>
+            <h2 className="text-[1.2rem] font-bold text-[#0F172A]">Admin Access Center</h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-[13px] text-[#475569] mt-1">
             Assign workspaces and control permissions for every admin from one place.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-400"><span className="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1">Profile-based access</span><span className="rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1">Workspace-scoped permissions</span></div>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]"><span className="admin-tab-active rounded-full px-2.5 py-1">Profile-based access</span><span className="admin-tab rounded-full px-2.5 py-1">Workspace-scoped permissions</span></div>
         </div>
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs shadow-lg shadow-purple-500/20"
+          className="order-primary flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs"
         >
           <UserPlus className="w-4 h-4 stroke-[2.5]" />
           Create Admin Account
@@ -205,13 +205,13 @@ export default function AdminManagement() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">Admin accounts</div><div className="mt-1 text-2xl font-black text-white">{admins.length}</div></div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">Active admins</div><div className="mt-1 text-2xl font-black text-emerald-400">{admins.filter((a) => a.active !== false).length}</div></div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">Workspaces</div><div className="mt-1 text-2xl font-black text-cyan-400">{businesses.length}</div></div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">Assignments</div><div className="mt-1 text-2xl font-black text-purple-300">{admins.reduce((sum, a) => sum + a.businessAccess.length, 0)}</div></div>
+        <div className="admin-stat"><div className="admin-stat-label">Admin accounts</div><div className="admin-stat-value">{admins.length}</div></div>
+        <div className="admin-stat"><div className="admin-stat-label">Active admins</div><div className="admin-stat-value">{admins.filter((a) => a.active !== false).length}</div></div>
+        <div className="admin-stat"><div className="admin-stat-label">Workspaces</div><div className="admin-stat-value">{businesses.length}</div></div>
+        <div className="admin-stat"><div className="admin-stat-label">Assignments</div><div className="admin-stat-value">{admins.reduce((sum, a) => sum + a.businessAccess.length, 0)}</div></div>
       </div>
 
-      <div className="relative"><input value={adminQuery} onChange={(e) => setAdminQuery(e.target.value)} placeholder="Search admins by name, username, or email..." className="w-full rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/10" /></div>
+      <div className="relative"><input value={adminQuery} onChange={(e) => setAdminQuery(e.target.value)} placeholder="Search admins by name, username, or email..." className="admin-search w-full rounded-xl px-4 py-3 text-sm outline-none transition" /></div>
 
       {/* Admin Matrix */}
       {loading ? (
@@ -222,7 +222,7 @@ export default function AdminManagement() {
             <div
               key={adm.id}
               onClick={() => openAdmin(adm)}
-              className="group bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl cursor-pointer hover:-translate-y-0.5 hover:border-purple-500/60 hover:shadow-purple-950/20 transition-all"
+              className="admin-profile-card group rounded-2xl p-5 cursor-pointer"
             >
               {/* Admin Header */}
               <div className="flex items-start justify-between gap-3 pb-5 border-b border-slate-800">
@@ -231,19 +231,19 @@ export default function AdminManagement() {
                     {adm.name.charAt(0)}
                   </div>
                   <div className="min-w-0">
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-purple-300">Administrator</div>
-                    <h3 className="truncate text-base font-bold text-slate-100">{adm.name}</h3>
-                    <div className="truncate text-xs text-slate-400">{adm.email}</div>
+                    <div className="admin-card-label mb-1">Administrator</div>
+                    <h3 className="truncate text-base font-bold text-[#0F172A]">{adm.name}</h3>
+                    <div className="truncate text-xs text-[#64748B]">{adm.email}</div>
                   </div>
                 </div>
                 <div className="shrink-0">
-                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold ${adm.active === false ? 'border-rose-500/30 bg-rose-500/10 text-rose-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'}`}>
+                  <span className={`admin-status inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold ${adm.active === false ? 'admin-status-off' : 'admin-status-on'}`}>
                     {adm.active === false ? 'Inactive' : 'Active'}
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 py-4"><div className="rounded-xl bg-slate-950/60 px-3 py-2.5"><div className="text-[10px] uppercase tracking-wider text-slate-500">Workspaces</div><div className="mt-1 font-bold text-white">{adm.businessAccess.length}</div></div><div className="rounded-xl bg-slate-950/60 px-3 py-2.5"><div className="text-[10px] uppercase tracking-wider text-slate-500">Enabled</div><div className="mt-1 font-bold text-emerald-300">{adm.permissions.filter((p: any) => p.enabled).length}</div></div><div className="rounded-xl bg-slate-950/60 px-3 py-2.5"><div className="text-[10px] uppercase tracking-wider text-slate-500">Joined</div><div className="mt-1 truncate font-bold text-slate-200">{new Date(adm.createdAt).toLocaleDateString()}</div></div></div>
+              <div className="grid grid-cols-3 gap-2 py-4"><div className="admin-mini-stat"><div className="admin-card-label">Workspaces</div><div className="admin-mini-value">{adm.businessAccess.length}</div></div><div className="admin-mini-stat"><div className="admin-card-label">Enabled</div><div className="admin-mini-value">{adm.permissions.filter((p: any) => p.enabled).length}</div></div><div className="admin-mini-stat"><div className="admin-card-label">Joined</div><div className="admin-mini-value truncate">{new Date(adm.createdAt).toLocaleDateString()}</div></div></div>
               <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap gap-1.5">{adm.businessAccess.slice(0, 2).map((x: any) => <span key={x.businessId} className="max-w-[150px] truncate rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">{x.business.name}</span>)}{adm.businessAccess.length > 2 && <span className="rounded-full border border-slate-700 px-2.5 py-1 text-[10px] text-slate-400">+{adm.businessAccess.length - 2} more</span>}</div><button type="button" onClick={(e) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-purple-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-purple-400 transition-colors"><Key className="w-3.5 h-3.5" /> Manage</button></div>
 
               {/* Access details live in the focused Manage drawer below. */}
