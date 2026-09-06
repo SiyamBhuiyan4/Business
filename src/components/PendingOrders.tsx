@@ -268,7 +268,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
           <div className="py-16 text-center text-slate-500 text-sm">Loading orders...</div>
         ) : filteredOrders.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[980px] text-left text-xs">
               <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-5 py-3.5">Customer / Contact</th>
@@ -390,7 +390,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
       {/* View Order Detail Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
               <div>
                 <span className="text-xs text-slate-500 uppercase tracking-wider font-mono">
@@ -406,7 +406,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
                 <div>
                   <span className="text-[10px] text-slate-500 uppercase font-semibold">Contact</span>

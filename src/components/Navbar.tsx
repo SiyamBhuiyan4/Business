@@ -37,9 +37,9 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 lg:px-8 py-3.5 shadow-lg">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 min-w-0">
         {/* Left: Brand Logo & Business Switcher */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href={workspaceBase} className="flex items-center gap-2.5 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
               <Store className="w-5 h-5" />
@@ -59,7 +59,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-sm font-medium text-slate-200 transition-colors"
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="max-w-[150px] truncate">
+                <span className="max-w-[150px] sm:max-w-[220px] truncate">
                   {currentBusiness ? currentBusiness.name : 'Select Business'}
                 </span>
                 <ChevronDown className="w-4 h-4 text-slate-400 ml-1" />

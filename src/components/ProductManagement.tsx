@@ -152,7 +152,7 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
                   </button>
                 </div>
 
-                <h3 className="text-base font-bold text-slate-100 mt-2">{prod.name}</h3>
+                <h3 className="text-base font-bold text-slate-100 mt-2 break-words">{prod.name}</h3>
 
                 <div className="text-xl font-black text-emerald-400 mt-2">
                   {formatCurrency(prod.unitPrice)}
