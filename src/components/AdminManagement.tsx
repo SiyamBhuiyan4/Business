@@ -25,6 +25,7 @@ export default function AdminManagement() {
   const [editPassword, setEditPassword] = useState('');
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<Record<string, boolean>>({});
   const [accessUpdating, setAccessUpdating] = useState<string | null>(null);
+  const [adminQuery, setAdminQuery] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -182,14 +183,14 @@ export default function AdminManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl flex items-center justify-between">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div>
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-purple-400" />
-            <h2 className="text-lg font-bold text-slate-100">Granular Admin Permissions Profile Panel</h2>
+            <h2 className="text-xl font-black text-slate-100">Admin Access Center</h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Configure exact toggle permissions per Admin user per Business workspace (Admin ↔ Business ↔ Permission)
+            Assign workspaces and control permissions for every admin from one place.
           </p>
           <p className="text-[11px] text-purple-300 mt-2">Select an admin, then use Manage Access to assign workspaces and toggle permissions.</p>
         </div>
@@ -203,12 +204,21 @@ export default function AdminManagement() {
         </button>
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">Admin accounts</div><div className="mt-1 text-2xl font-black text-white">{admins.length}</div></div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">Active admins</div><div className="mt-1 text-2xl font-black text-emerald-400">{admins.filter((a) => a.active !== false).length}</div></div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">Workspaces</div><div className="mt-1 text-2xl font-black text-cyan-400">{businesses.length}</div></div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">Assignments</div><div className="mt-1 text-2xl font-black text-purple-300">{admins.reduce((sum, a) => sum + a.businessAccess.length, 0)}</div></div>
+      </div>
+
+      <div className="relative"><input value={adminQuery} onChange={(e) => setAdminQuery(e.target.value)} placeholder="Search admins by name, username, or email..." className="w-full rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/10" /></div>
+
       {/* Admin Matrix */}
       {loading ? (
         <div className="py-16 text-center text-slate-500 text-sm">Loading admin permission profiles...</div>
       ) : admins.length > 0 ? (
         <div className="space-y-6">
-          {admins.map((adm) => (
+          {admins.filter((adm) => `${adm.name} ${adm.username || ''} ${adm.email}`.toLowerCase().includes(adminQuery.toLowerCase())).map((adm) => (
             <div
               key={adm.id}
               onClick={() => openAdmin(adm)}
