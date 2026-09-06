@@ -38,8 +38,10 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
   const [showInvestment, setShowInvestment] = useState(false);
   const [investmentAdmins, setInvestmentAdmins] = useState<any[]>([]);
   const [loadingInvestment, setLoadingInvestment] = useState(false);
+  const [investmentTotal, setInvestmentTotal] = useState(investment);
   const [showRevenue, setShowRevenue] = useState(false);
   const [revenueAdmins, setRevenueAdmins] = useState<any[]>([]);
+  const [revenueTotal, setRevenueTotal] = useState(0);
   const [loadingRevenue, setLoadingRevenue] = useState(false);
 
   const openRevenueBreakdown = async () => {
@@ -49,7 +51,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
       const res = await fetch(`/api/businesses/${businessId}/admin-revenue`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Unable to load admin revenue');
-      setRevenueAdmins(json.admins);
+      setRevenueAdmins(json.admins); setRevenueTotal(json.total ?? json.admins.reduce((sum: number, admin: any) => sum + admin.amount, 0));
     } catch (error: any) { alert(error.message); setShowRevenue(false); } finally { setLoadingRevenue(false); }
   };
 
@@ -61,7 +63,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
     const res = await fetch(`/api/businesses/${businessId}/admin-revenue`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: admin.id, amount }) });
     const json = await res.json();
     if (!res.ok) return alert(json.error || 'Unable to update admin revenue');
-    setRevenueAdmins((items) => items.map((item) => item.id === admin.id ? { ...item, amount: json.amount } : item));
+    setRevenueAdmins((items) => { const next = items.map((item) => item.id === admin.id ? { ...item, amount: json.amount } : item); setRevenueTotal(next.reduce((sum, item) => sum + item.amount, 0)); return next; });
   };
 
   const openInvestmentBreakdown = async () => {
@@ -71,7 +73,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
       const res = await fetch(`/api/businesses/${businessId}/admin-investment`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Unable to load investments');
-      setInvestmentAdmins(json.admins);
+      setInvestmentAdmins(json.admins); setInvestmentTotal(json.total ?? json.admins.reduce((sum: number, admin: any) => sum + admin.amount, 0));
     } catch (error: any) { alert(error.message); setShowInvestment(false); } finally { setLoadingInvestment(false); }
   };
 
@@ -84,7 +86,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
     const json = await res.json();
     if (!res.ok) return alert(json.error || 'Unable to update investment');
     setInvestmentAdmins((items) => items.map((item) => item.id === admin.id ? { ...item, amount: json.amount } : item));
-    onInvestmentUpdated?.(json.total);
+    setInvestmentTotal(json.total); onInvestmentUpdated?.(json.total);
   };
 
   const fetchAnalytics = async () => {
@@ -199,7 +201,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
         <button type="button" onClick={openInvestmentBreakdown} className="text-left bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border border-slate-800 hover:border-cyan-500/50 p-5 rounded-2xl shadow-xl relative overflow-hidden group transition-colors">
           <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl" />
           <div className="flex items-center justify-between"><span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Invested</span><div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center"><Wallet className="w-5 h-5" /></div></div>
-          <div className="mt-3 flex items-center gap-2"><div className="text-2xl lg:text-3xl font-extrabold text-white">{formatCurrency(investment)}</div></div>
+          <div className="mt-3 flex items-center gap-2"><div className="text-2xl lg:text-3xl font-extrabold text-white">{formatCurrency(investmentTotal)}</div></div>
           <div className="text-xs text-cyan-400 mt-1 font-medium">Business investment (BDT)</div>
           <span className="absolute bottom-4 right-4 text-[10px] font-semibold text-slate-500 group-hover:text-cyan-400">Click to view admins</span>
         </button>
@@ -213,7 +215,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
           </div>
           <div className="mt-3">
             <div className="text-2xl lg:text-3xl font-extrabold text-white">
-              {data ? formatCurrency(data.summary.totalSales) : '৳0'}
+              {formatCurrency(revenueTotal || (data ? data.summary.totalSales : 0))}
             </div>
             <div className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-medium">
               Selected Period Revenue (BDT)

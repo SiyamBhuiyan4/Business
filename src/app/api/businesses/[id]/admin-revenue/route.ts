@@ -8,11 +8,12 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const access = await checkUserBusinessPermission(user.id, params.id, 'sales:view');
   if (!access.allowed) return NextResponse.json({ error: 'Missing sales access' }, { status: 403 });
   const admins = await prisma.adminBusinessAccess.findMany({
-    where: { businessId: params.id, user: { role: 'ADMIN', active: true } },
+    where: { businessId: params.id, user: { role: 'ADMIN' } },
     select: { user: { select: { id: true, name: true, username: true, email: true, revenueBalances: { where: { businessId: params.id }, select: { amount: true } } } } },
     orderBy: { user: { name: 'asc' } },
   });
-  return NextResponse.json({ admins: admins.map(({ user }) => ({ id: user.id, name: user.name, username: user.username, email: user.email, amount: user.revenueBalances[0]?.amount || 0 })) });
+  const rows = admins.map(({ user }) => ({ id: user.id, name: user.name, username: user.username, email: user.email, amount: user.revenueBalances[0]?.amount || 0 }));
+  return NextResponse.json({ admins: rows, total: rows.reduce((sum, admin) => sum + admin.amount, 0) });
 }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
