@@ -28,6 +28,7 @@ export default function AdminManagement() {
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<Record<string, boolean>>({});
   const [accessUpdating, setAccessUpdating] = useState<string | null>(null);
   const [adminQuery, setAdminQuery] = useState('');
+  const [createError, setCreateError] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -147,7 +148,8 @@ export default function AdminManagement() {
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !username || !password) return;
+    const normalizedUsername = username.trim().toLowerCase();
+    if (!normalizedUsername || !password.trim()) return;
 
     setSubmitting(true);
     try {
@@ -155,15 +157,16 @@ export default function AdminManagement() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
-          username: username.trim(),
-          email: email.trim(),
-          password,
-          assignedBusinessIds: selectedBizIds,
+          name: normalizedUsername,
+          username: normalizedUsername,
+          email: '',
+          password: password.trim(),
+          assignedBusinessIds: [],
         }),
       });
 
       if (res.ok) {
+        setCreateError('');
         setShowCreateModal(false);
         setName('');
         setEmail('');
@@ -173,7 +176,7 @@ export default function AdminManagement() {
         fetchData();
       } else {
         const json = await res.json();
-        alert(json.error || 'Failed to create admin');
+        setCreateError(res.status === 409 ? `Username '${normalizedUsername}' is already taken. Please choose another username.` : (json.error || 'Failed to create admin'));
       }
     } catch (err) {
       console.error('Error creating admin:', err);
@@ -445,18 +448,6 @@ export default function AdminManagement() {
 
             <form onSubmit={handleCreateAdmin} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Rahim Ahmed"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Username *</label>
                 <input
                   type="text"
@@ -467,8 +458,6 @@ export default function AdminManagement() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
                 />
               </div>
-
-              <div><label className="block text-xs font-semibold text-slate-400 mb-1">Email Address (optional)</label><input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Optional email" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500" /></div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Password *</label>
@@ -484,29 +473,7 @@ export default function AdminManagement() {
                 <button type="button" onClick={() => setShowPassword((value) => !value)} title={showPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-2">Assign Initial Businesses</label>
-                <div className="space-y-2">
-                  {businesses.map((biz) => (
-                    <label key={biz.id} className="flex items-center gap-2.5 text-xs text-slate-200 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedBizIds.includes(biz.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedBizIds([...selectedBizIds, biz.id]);
-                          } else {
-                            setSelectedBizIds(selectedBizIds.filter((id) => id !== biz.id));
-                          }
-                        }}
-                        className="rounded border-slate-800 text-purple-500 focus:ring-0"
-                      />
-                      <span>{biz.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
+              {createError && <div role="alert" className="rounded-xl border border-red-500 bg-red-100/95 px-3 py-2 text-xs font-bold text-red-800">{createError}</div>}
               <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
                 <button
                   type="button"

@@ -45,9 +45,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name, Username, and Password are required' }, { status: 400 });
     }
 
-    const existing = await prisma.user.findFirst({ where: { OR: [{ username: username.toLowerCase().trim() }, ...(email ? [{ email: email.toLowerCase().trim() }] : [])] } });
+    const normalizedUsername = String(username).trim().toLowerCase();
+    const existing = await prisma.user.findFirst({ where: { username: { equals: normalizedUsername, mode: 'insensitive' } } });
     if (existing) {
-      return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 });
+      return NextResponse.json({ error: `Username '${normalizedUsername}' is already taken.` }, { status: 409 });
     }
 
     const passwordHash = await hashPassword(password);
@@ -55,8 +56,8 @@ export async function POST(request: Request) {
     const newAdmin = await prisma.user.create({
       data: {
         name: name.trim(),
-        username: username.toLowerCase().trim(),
-        email: email?.toLowerCase().trim() || `${username.toLowerCase().trim()}@local.invalid`,
+        username: normalizedUsername,
+        email: email?.toLowerCase().trim() || `${normalizedUsername}@local.invalid`,
         passwordHash,
         role: 'ADMIN',
       },
