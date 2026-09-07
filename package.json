@@ -10,7 +10,8 @@
     "lint": "next lint",
     "prisma:push": "prisma db push",
     "seed": "node --loader ts-node/register prisma/seed.ts",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "reset:super-admin": "npx tsx scripts/reset-super-admin.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

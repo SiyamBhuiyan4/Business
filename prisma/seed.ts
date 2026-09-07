@@ -15,14 +15,17 @@ async function main() {
   await prisma.business.deleteMany();
   await prisma.user.deleteMany();
 
-  const superAdminPasswordHash = await bcrypt.hash('Siy@m@123', 10);
+  const superAdminUsername = (process.env.SUPER_ADMIN_USERNAME || 'sihab').trim().toLowerCase();
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'Siy@m@123';
+  const superAdminPasswordHash = await bcrypt.hash(superAdminPassword, 10);
   const sampleAdminPasswordHash = await bcrypt.hash('Admin@123', 10);
 
   // 1. Create Users
   const superAdmin = await prisma.user.create({
     data: {
       name: 'Super Admin (Owner)',
-      email: 'myempire.rise',
+      username: superAdminUsername,
+      email: superAdminUsername,
       passwordHash: superAdminPasswordHash,
       role: 'SUPER_ADMIN',
     },

@@ -24,6 +24,24 @@ export async function comparePassword(password: string, hash: string): Promise<b
   return bcrypt.compare(password, hash);
 }
 
+/** Creates the configured emergency owner only when the database has no owner. */
+export async function ensureSuperAdmin() {
+  const existing = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+  if (existing) return existing;
+  const username = (process.env.SUPER_ADMIN_USERNAME || 'sihab').trim().toLowerCase();
+  const password = process.env.SUPER_ADMIN_PASSWORD;
+  if (!password) return null;
+  return prisma.user.create({
+    data: {
+      name: 'Super Admin (Owner)',
+      username,
+      email: username,
+      passwordHash: await hashPassword(password),
+      role: 'SUPER_ADMIN',
+    },
+  });
+}
+
 export async function verifyMutationApproval(phrase: unknown, password: unknown) {
   if (phrase !== 'YES I WANT TO DO IT' || typeof password !== 'string' || !password) return false;
   const owner = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' }, select: { passwordHash: true } });

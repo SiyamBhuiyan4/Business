@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { comparePassword, signToken } from '@/lib/auth';
+import { comparePassword, ensureSuperAdmin, signToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
+    await ensureSuperAdmin();
     const user = await prisma.user.findFirst({
       where: { OR: [{ email: identifier }, { username: identifier }] },
     });

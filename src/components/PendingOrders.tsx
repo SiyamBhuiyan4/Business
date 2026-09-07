@@ -23,6 +23,7 @@ import {
 import { formatCurrency, formatDate, formatDateWithTime } from '@/lib/utils';
 import { format } from 'date-fns';
 import BulkImportModal from '@/components/BulkImportModal';
+import { useCSVImport } from '@/hooks/useCSVImport';
 
 interface PendingOrdersProps {
   businessId: string;
@@ -31,6 +32,7 @@ interface PendingOrdersProps {
 }
 
 export default function PendingOrders({ businessId, permissions, onOrderChange }: PendingOrdersProps) {
+  const { downloadTemplate } = useCSVImport();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -217,6 +219,9 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
 
         {permissions['orders:manage'] && (
           <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={downloadTemplate} className="order-action order-action-edit" title="Download the CSV template">
+            <FileText className="mr-1 h-4 w-4" /> Download CSV Template
+          </button>
           <button type="button" onClick={() => setShowBulkModal(true)} className="order-action order-action-edit"><Upload className="mr-1 h-4 w-4"/> Import CSV</button>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -267,7 +272,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
           </select>
         </div>
       </div>
-      {showBulkModal && <BulkImportModal businessId={businessId} onClose={() => setShowBulkModal(false)} onComplete={() => { setShowBulkModal(false); fetchOrders(); onOrderChange?.(); }} />}
+      {showBulkModal && <BulkImportModal businessId={businessId} onClose={() => setShowBulkModal(false)} onComplete={() => { fetchOrders(); onOrderChange?.(); }} />}
 
       {/* Orders List Table */}
       <div className="analytics-glass rounded-2xl overflow-hidden">

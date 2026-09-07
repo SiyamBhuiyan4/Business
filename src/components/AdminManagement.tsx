@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Plus, Check, X, UserPlus, ToggleLeft, ToggleRight, Building, Key, Mail, CalendarDays, Trash2, Pencil, UserCheck, UserX } from 'lucide-react';
+import { Shield, Plus, Check, X, UserPlus, ToggleLeft, ToggleRight, Building, Key, Mail, CalendarDays, Trash2, Pencil, UserCheck, UserX, Eye, EyeOff } from 'lucide-react';
 import { PERMISSION_LIST } from '@/lib/permissions';
 
 export default function AdminManagement() {
@@ -23,6 +23,8 @@ export default function AdminManagement() {
   const [editEmail, setEditEmail] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<Record<string, boolean>>({});
   const [accessUpdating, setAccessUpdating] = useState<string | null>(null);
   const [adminQuery, setAdminQuery] = useState('');
@@ -56,7 +58,7 @@ export default function AdminManagement() {
   const openAdmin = (admin: any) => { setSelectedAdmin(admin); setEditMode(false); setEditName(admin.name); setEditEmail(admin.email); setEditUsername(admin.username || admin.email.split('@')[0]); setEditPassword(''); };
   const updateAdmin = async (active: boolean = selectedAdmin.active, remove = false) => {
     if (remove) { if (!window.confirm(`Delete ${selectedAdmin.name}? This cannot be easily undone.`)) return; const res = await fetch(`/api/admins?id=${selectedAdmin.id}`, { method: 'DELETE' }); if (res.ok) { setSelectedAdmin(null); fetchData(); } return; }
-    const nextPassword = editPassword || window.prompt('Set a new password for this admin (leave blank to keep the current password):') || '';
+    const nextPassword = editPassword.trim();
     const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, username: editUsername, email: editEmail, password: nextPassword || undefined, active }) });
     if (res.ok) { setSelectedAdmin({ ...selectedAdmin, name: editName, email: editEmail, active }); setEditMode(false); fetchData(); }
   };
@@ -379,7 +381,7 @@ export default function AdminManagement() {
                   <label className="space-y-1.5 text-sm font-semibold text-slate-300">Username<input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
                 </div>
                 <label className="block space-y-1.5 text-sm font-semibold text-slate-300">Email<input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
-                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">New password <span className="font-normal text-slate-500">(optional)</span><input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Keep blank to leave unchanged" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none placeholder:text-slate-600 focus:border-purple-400" /></label>
+                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">New password <span className="font-normal text-slate-500">(optional)</span><span className="relative block"><input type={showEditPassword ? 'text' : 'password'} autoComplete="new-password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Leave blank to keep current password" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 pr-11 text-white outline-none placeholder:text-slate-600 focus:border-purple-400" /><button type="button" onClick={() => setShowEditPassword((value) => !value)} title={showEditPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></span></label>
                 <button type="button" onClick={() => updateAdmin()} disabled={!editName.trim() || !editUsername.trim()} className="w-full rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-black text-slate-950 hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50">Save Changes</button>
               </div>
             )}
@@ -471,13 +473,15 @@ export default function AdminManagement() {
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Password *</label>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
                 />
+                <button type="button" onClick={() => setShowPassword((value) => !value)} title={showPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
               </div>
 
               <div>
