@@ -12,7 +12,7 @@ export default function CursorTrail() {
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const TRAIL_LENGTH = 20;
+    const TRAIL_LENGTH = 22;
     const mouse = { x: -100, y: -100 };
     const pos = { x: -100, y: -100 };
     let points: TrailPoint[] = [];
