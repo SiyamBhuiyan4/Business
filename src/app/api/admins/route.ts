@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSessionUser, hashPassword } from '@/lib/auth';
+import { comparePassword, getSessionUser, hashPassword } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { PERMISSION_LIST } from '@/lib/permissions';
 
@@ -108,9 +108,10 @@ export async function DELETE(request: Request) {
 export async function PUT(request: Request) {
   const user = await getSessionUser();
   if (!user || user.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Only Super Admin can edit admin accounts' }, { status: 403 });
-  const { id, name, username, email, password, active } = await request.json();
+  const { id, name, username, email, password, currentPassword, active } = await request.json();
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target || target.role !== 'ADMIN') return NextResponse.json({ error: 'Only normal admin accounts can be edited' }, { status: 400 });
+  if (currentPassword && !(await comparePassword(String(currentPassword), target.passwordHash))) return NextResponse.json({ error: 'Current password is incorrect.' }, { status: 403 });
   const data: any = { username: username?.toLowerCase().trim(), active: Boolean(active) };
   if (password) data.passwordHash = await hashPassword(password);
   const admin = await prisma.user.update({ where: { id }, data, select: { id: true, name: true, email: true, role: true, active: true } });
