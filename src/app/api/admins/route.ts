@@ -111,7 +111,7 @@ export async function PUT(request: Request) {
   const { id, name, username, email, password, active } = await request.json();
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target || target.role !== 'ADMIN') return NextResponse.json({ error: 'Only normal admin accounts can be edited' }, { status: 400 });
-  const data: any = { name: name?.trim(), username: username?.toLowerCase().trim(), email: email?.toLowerCase().trim() || `${username.toLowerCase().trim()}@local.invalid`, active: Boolean(active) };
+  const data: any = { username: username?.toLowerCase().trim(), active: Boolean(active) };
   if (password) data.passwordHash = await hashPassword(password);
   const admin = await prisma.user.update({ where: { id }, data, select: { id: true, name: true, email: true, role: true, active: true } });
   return NextResponse.json({ success: true, admin });

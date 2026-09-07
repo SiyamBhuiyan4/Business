@@ -379,13 +379,9 @@ export default function AdminManagement() {
 
             {editMode && (
               <div className="mt-4 space-y-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 p-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="space-y-1.5 text-sm font-semibold text-slate-300">Name<input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
-                  <label className="space-y-1.5 text-sm font-semibold text-slate-300">Username<input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
-                </div>
-                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">Email<input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
+                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">Username<input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} autoComplete="username" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
                 <label className="block space-y-1.5 text-sm font-semibold text-slate-300">New password <span className="font-normal text-slate-500">(optional)</span><span className="relative block"><input type={showEditPassword ? 'text' : 'password'} autoComplete="new-password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Leave blank to keep current password" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 pr-11 text-white outline-none placeholder:text-slate-600 focus:border-purple-400" /><button type="button" onClick={() => setShowEditPassword((value) => !value)} title={showEditPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></span></label>
-                <button type="button" onClick={() => updateAdmin()} disabled={!editName.trim() || !editUsername.trim()} className="w-full rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-black text-slate-950 hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50">Save Changes</button>
+                <button type="button" onClick={() => updateAdmin()} disabled={!editUsername.trim()} className="w-full rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-black text-slate-950 hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50">Save Changes</button>
               </div>
             )}
 
