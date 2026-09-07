@@ -31,6 +31,7 @@ export default function AdminManagement() {
   const [accessUpdating, setAccessUpdating] = useState<string | null>(null);
   const [adminQuery, setAdminQuery] = useState('');
   const [createError, setCreateError] = useState('');
+  const loginAs = async (admin: any) => { const res = await fetch('/api/admin/impersonate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: admin.id }) }); if (res.ok) window.location.href = '/admin/dashboard'; else alert((await res.json()).error || 'Unable to log in as admin'); };
 
   const fetchData = async () => {
     setLoading(true);
@@ -251,7 +252,7 @@ export default function AdminManagement() {
               </div>
 
               <div className="grid grid-cols-3 gap-2 py-4"><div className="admin-mini-stat"><div className="admin-card-label">Workspaces</div><div className="admin-mini-value">{adm.businessAccess.length}</div></div><div className="admin-mini-stat"><div className="admin-card-label">Enabled</div><div className="admin-mini-value">{adm.permissions.filter((p: any) => p.enabled).length}</div></div><div className="admin-mini-stat"><div className="admin-card-label">Joined</div><div className="admin-mini-value truncate">{new Date(adm.createdAt).toLocaleDateString()}</div></div></div>
-              <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap gap-1.5">{adm.businessAccess.slice(0, 2).map((x: any) => <span key={x.businessId} className="max-w-[150px] truncate rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">{x.business.name}</span>)}{adm.businessAccess.length > 2 && <span className="rounded-full border border-slate-700 px-2.5 py-1 text-[10px] text-slate-400">+{adm.businessAccess.length - 2} more</span>}</div><button type="button" onClick={(e) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-purple-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-purple-400 transition-colors"><Key className="w-3.5 h-3.5" /> Manage</button></div>
+              <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap gap-1.5">{adm.businessAccess.slice(0, 2).map((x: any) => <span key={x.businessId} className="max-w-[150px] truncate rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">{x.business.name}</span>)}</div><div className="flex gap-2"><button type="button" onClick={(e) => { e.stopPropagation(); loginAs(adm); }} className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950">Login As</button><button type="button" onClick={(e) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-purple-500 px-3 py-2 text-xs font-bold text-slate-950"><Key className="w-3.5 h-3.5" /> Manage</button></div></div>
 
               {/* Access details live in the focused Manage drawer below. */}
               <div className="hidden">
