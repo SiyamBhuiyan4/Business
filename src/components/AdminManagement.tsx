@@ -1,10 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Shield, Plus, Check, X, UserPlus, ToggleLeft, ToggleRight, Building, Key, Mail, CalendarDays, Trash2, Pencil, UserCheck, UserX, Eye, EyeOff } from 'lucide-react';
 import { PERMISSION_LIST } from '@/lib/permissions';
+import Modal from '@/components/motion/Modal';
+import PressableButton from '@/components/motion/PressableButton';
+import { useToast } from '@/components/motion/Toast';
+import { slideFromRight, springSnappy, staggerContainer, staggerItem } from '@/lib/motion';
 
 export default function AdminManagement() {
+  const toast = useToast();
   const [admins, setAdmins] = useState<any[]>([]);
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +37,8 @@ export default function AdminManagement() {
   const [accessUpdating, setAccessUpdating] = useState<string | null>(null);
   const [adminQuery, setAdminQuery] = useState('');
   const [createError, setCreateError] = useState('');
-  const loginAs = async (admin: any) => { const res = await fetch('/api/admin/impersonate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: admin.id }) }); if (res.ok) window.location.href = '/admin/dashboard'; else alert((await res.json()).error || 'Unable to log in as admin'); };
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const loginAs = async (admin: any) => { const res = await fetch('/api/admin/impersonate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: admin.id }) }); if (res.ok) window.location.href = '/admin/dashboard'; else toast.error((await res.json()).error || 'Unable to log in as admin'); };
 
   const fetchData = async () => {
     setLoading(true);
@@ -61,10 +68,11 @@ export default function AdminManagement() {
 
   const openAdmin = (admin: any) => { setSelectedAdmin(admin); setEditMode(false); setEditName(admin.name); setEditEmail(admin.email); setEditUsername(admin.username || admin.email.split('@')[0]); setEditPassword(''); setEditCurrentPassword(''); };
   const updateAdmin = async (active: boolean = selectedAdmin.active, remove = false) => {
-    if (remove) { if (!window.confirm(`Delete ${selectedAdmin.name}? This cannot be easily undone.`)) return; const res = await fetch(`/api/admins?id=${selectedAdmin.id}`, { method: 'DELETE' }); if (res.ok) { setSelectedAdmin(null); fetchData(); } return; }
+    if (remove) { const res = await fetch(`/api/admins?id=${selectedAdmin.id}`, { method: 'DELETE' }); if (res.ok) { setSelectedAdmin(null); setShowDeleteConfirm(false); fetchData(); toast.success('Admin deleted'); } return; }
     const nextPassword = editPassword.trim();
     const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, username: editUsername, email: editEmail, password: nextPassword || undefined, currentPassword: editCurrentPassword || undefined, active }) });
-    if (res.ok) { setSelectedAdmin({ ...selectedAdmin, name: editName, email: editEmail, active }); setEditMode(false); fetchData(); }
+    if (res.ok) { setSelectedAdmin({ ...selectedAdmin, name: editName, email: editEmail, active }); setEditMode(false); fetchData(); toast.success(active === selectedAdmin.active ? 'Admin updated' : active ? 'Admin activated' : 'Admin deactivated'); }
+    else toast.error('Failed to update admin');
   };
 
   const handleTogglePermission = async (
@@ -101,10 +109,10 @@ export default function AdminManagement() {
       });
 
       if (res.ok) await fetchData();
-      else { const json = await res.json().catch(() => ({})); alert(json.error || 'Failed to update permission'); }
+      else { const json = await res.json().catch(() => ({})); toast.error(json.error || 'Failed to update permission'); }
     } catch (err) {
       console.error('Failed to toggle permission:', err);
-      alert('Could not update permission. Please try again.');
+      toast.error('Could not update permission. Please try again.');
     } finally {
       setAccessUpdating(null);
     }
@@ -138,12 +146,13 @@ export default function AdminManagement() {
             : current.permissions.filter((x: any) => x.businessId !== businessId),
         } : current);
         await fetchData();
-        if (!isCurrentlyAssigned) alert('Workspace access assigned successfully.');
+        if (!isCurrentlyAssigned) toast.success('Workspace access assigned successfully.');
+        else toast.success('Workspace access removed');
       }
-      else { const json = await res.json().catch(() => ({})); alert(json.error || 'Failed to update workspace access'); }
+      else { const json = await res.json().catch(() => ({})); toast.error(json.error || 'Failed to update workspace access'); }
     } catch (err) {
       console.error('Failed to toggle business access:', err);
-      alert('Could not update workspace access. Please try again.');
+      toast.error('Could not update workspace access. Please try again.');
     } finally {
       setAccessUpdating(null);
     }
@@ -177,6 +186,7 @@ export default function AdminManagement() {
         setPassword('');
         setSelectedBizIds([]);
         fetchData();
+        toast.success('Admin account created');
       } else {
         const json = await res.json();
         setCreateError(res.status === 409 ? `Username '${normalizedUsername}' is already taken. Please choose another username.` : (json.error || 'Failed to create admin'));
@@ -203,13 +213,13 @@ export default function AdminManagement() {
           <div className="mt-3 flex flex-wrap gap-2 text-[11px]"><span className="admin-tab-active rounded-full px-2.5 py-1">Profile-based access</span><span className="admin-tab rounded-full px-2.5 py-1">Workspace-scoped permissions</span></div>
         </div>
 
-        <button
+        <PressableButton
           onClick={() => setShowCreateModal(true)}
           className="order-primary flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs"
         >
           <UserPlus className="w-4 h-4 stroke-[2.5]" />
           Create Admin Account
-        </button>
+        </PressableButton>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -225,10 +235,13 @@ export default function AdminManagement() {
       {loading ? (
         <div className="py-16 text-center text-slate-500 text-sm">Loading admin permission profiles...</div>
       ) : admins.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2">
+        <motion.div className="grid gap-4 md:grid-cols-2" variants={staggerContainer} initial="hidden" animate="visible">
           {admins.filter((adm) => `${adm.name} ${adm.username || ''} ${adm.email}`.toLowerCase().includes(adminQuery.toLowerCase())).map((adm) => (
-            <div
+            <motion.div
               key={adm.id}
+              variants={staggerItem}
+              whileHover={{ y: -4 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               onClick={() => openAdmin(adm)}
               className="admin-profile-card group rounded-2xl p-5 cursor-pointer"
             >
@@ -252,132 +265,55 @@ export default function AdminManagement() {
               </div>
 
               <div className="grid grid-cols-3 gap-2 py-4"><div className="admin-mini-stat"><div className="admin-card-label">Workspaces</div><div className="admin-mini-value">{adm.businessAccess.length}</div></div><div className="admin-mini-stat"><div className="admin-card-label">Enabled</div><div className="admin-mini-value">{adm.permissions.filter((p: any) => p.enabled).length}</div></div><div className="admin-mini-stat"><div className="admin-card-label">Joined</div><div className="admin-mini-value truncate">{new Date(adm.createdAt).toLocaleDateString()}</div></div></div>
-              <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap gap-1.5">{adm.businessAccess.slice(0, 2).map((x: any) => <span key={x.businessId} className="max-w-[150px] truncate rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">{x.business.name}</span>)}</div><div className="flex gap-2"><button type="button" onClick={(e) => { e.stopPropagation(); loginAs(adm); }} className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950">Login As</button><button type="button" onClick={(e) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-purple-500 px-3 py-2 text-xs font-bold text-slate-950"><Key className="w-3.5 h-3.5" /> Manage</button></div></div>
-
-              {/* Access details live in the focused Manage drawer below. */}
-              <div className="hidden">
-                {selectedAdmin?.id === adm.id && businesses.map((biz) => {
-                  const isAssigned = adm.businessAccess.some((ba: any) => ba.businessId === biz.id);
-
-                  // Extract permission values
-                  const getPermStatus = (permKey: string) => {
-                    const record = adm.permissions.find(
-                      (p: any) => p.businessId === biz.id && p.permissionKey === permKey
-                    );
-                    if (record) return record.enabled;
-                    const permDef = PERMISSION_LIST.find((p) => p.key === permKey);
-                    return permDef ? permDef.defaultForAdmin : false;
-                  };
-
-                  return (
-                    <div
-                      key={biz.id}
-                      className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Building className="w-4 h-4 text-emerald-400" />
-                          <span className="font-bold text-sm text-slate-200">{biz.name}</span>
-                        </div>
-
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleToggleBusinessAccess(adm.id, biz.id, isAssigned); }}
-                          disabled={accessUpdating === `${adm.id}:${biz.id}`}
-                          className={`text-xs font-bold px-3 py-1 rounded-lg border transition-all ${
-                            isAssigned
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                              : 'bg-slate-800 text-slate-500 border-slate-700'
-                          }`}
-                        >
-                          {accessUpdating === `${adm.id}:${biz.id}` ? 'Saving...' : isAssigned ? 'Assigned (Active)' : '+ Assign Access'}
-                        </button>
-                      </div>
-
-                      {isAssigned ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-                          {PERMISSION_LIST.map((perm) => {
-                            const isEnabled = getPermStatus(perm.key);
-                            return (
-                              <div
-                                key={perm.key}
-                                onClick={(e) => { e.stopPropagation();
-                                  handleTogglePermission(
-                                    adm.id,
-                                    biz.id,
-                                    perm.key,
-                                    isEnabled,
-                                    adm.permissions
-                                  )
-                                }}
-                                className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
-                                  isEnabled
-                                    ? 'bg-slate-900 border-purple-500/40 text-purple-200'
-                                    : 'bg-slate-900/40 border-slate-800 text-slate-500 opacity-60'
-                                }`}
-                              >
-                                <div>
-                                  <div className="text-xs font-bold">{perm.label}</div>
-                                  <div className="text-[10px] opacity-75">{perm.description}</div>
-                                </div>
-
-                                <div className="ml-2">
-                                  {isEnabled ? (
-                                    <div className="w-8 h-4 rounded-full bg-purple-500 flex items-center justify-end px-0.5">
-                                      <div className="w-3 h-3 rounded-full bg-white" />
-                                    </div>
-                                  ) : (
-                                    <div className="w-8 h-4 rounded-full bg-slate-700 flex items-center justify-start px-0.5">
-                                      <div className="w-3 h-3 rounded-full bg-slate-400" />
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-slate-500 italic py-1">
-                          Admin is not assigned to this business workspace. Click '+ Assign Access' above to grant.
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+              <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap gap-1.5">{adm.businessAccess.slice(0, 2).map((x: any) => <span key={x.businessId} className="max-w-[150px] truncate rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">{x.business.name}</span>)}</div><div className="flex gap-2"><PressableButton onClick={(e: React.MouseEvent) => { e.stopPropagation(); loginAs(adm); }} className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950">Login As</PressableButton><PressableButton onClick={(e: React.MouseEvent) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-purple-500 px-3 py-2 text-xs font-bold text-slate-950"><Key className="w-3.5 h-3.5" /> Manage</PressableButton></div></div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl py-16 text-center text-slate-500 text-sm">
           No custom Admin accounts found. Create one using the button above.
         </div>
       )}
 
-      {selectedAdmin && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/80 backdrop-blur-sm" onClick={() => setSelectedAdmin(null)}>
-          <aside className="h-full w-full max-w-xl overflow-y-auto border-l border-slate-700 bg-slate-900 p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+      <AnimatePresence>
+        {selectedAdmin && (
+          <motion.div
+            className="fixed inset-0 z-50 flex justify-end bg-slate-950/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedAdmin(null)}
+          >
+          <motion.aside
+            className="h-full w-full max-w-xl overflow-y-auto border-l border-slate-700 bg-slate-900 p-4 sm:p-6"
+            variants={slideFromRight}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-widest text-purple-300">Admin profile</p>
                 <h2 className="break-words text-2xl font-black text-white">{selectedAdmin.name}</h2>
                 <p className="break-all text-sm text-slate-400">{selectedAdmin.email || selectedAdmin.username}</p>
               </div>
-              <button onClick={() => setSelectedAdmin(null)} title="Close" className="shrink-0 rounded-xl bg-slate-800 p-2 text-slate-300 hover:bg-slate-700 hover:text-white">
+              <PressableButton onClick={() => setSelectedAdmin(null)} title="Close" className="shrink-0 rounded-xl bg-slate-800 p-2 text-slate-300 hover:bg-slate-700 hover:text-white">
                 <X className="h-5 w-5" />
-              </button>
+              </PressableButton>
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <button type="button" onClick={() => setEditMode((value) => !value)} className="flex items-center justify-center gap-2 rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-purple-400">
+              <PressableButton type="button" onClick={() => setEditMode((value) => !value)} className="flex items-center justify-center gap-2 rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-purple-400">
                 <Pencil className="h-4 w-4" /> {editMode ? 'Close Editor' : 'Edit Admin'}
-              </button>
-              <button type="button" onClick={() => updateAdmin(!selectedAdmin.active)} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold ${selectedAdmin.active ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25' : 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25'}`}>
+              </PressableButton>
+              <PressableButton type="button" onClick={() => updateAdmin(!selectedAdmin.active)} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold ${selectedAdmin.active ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25' : 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25'}`}>
                 {selectedAdmin.active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                 {selectedAdmin.active ? 'Deactivate' : 'Activate'}
-              </button>
-              <button type="button" onClick={() => updateAdmin(selectedAdmin.active, true)} className="flex items-center justify-center gap-2 rounded-xl bg-red-500/15 px-4 py-2.5 text-sm font-bold text-red-300 hover:bg-red-500/25">
+              </PressableButton>
+              <PressableButton type="button" onClick={() => setShowDeleteConfirm(true)} className="flex items-center justify-center gap-2 rounded-xl bg-red-500/15 px-4 py-2.5 text-sm font-bold text-red-300 hover:bg-red-500/25">
                 <Trash2 className="h-4 w-4" /> Delete
-              </button>
+              </PressableButton>
             </div>
 
             {editMode && (
@@ -400,49 +336,73 @@ export default function AdminManagement() {
                   return (
                     <div key={biz.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
                       <div className="flex items-center justify-between gap-3">
-                        <button type="button" onClick={() => assigned && setExpandedWorkspaces((state) => ({ ...state, [biz.id]: !expanded }))} className="flex min-w-0 items-center gap-2 text-left">
+                        <PressableButton type="button" onClick={() => assigned && setExpandedWorkspaces((state) => ({ ...state, [biz.id]: !expanded }))} className="flex min-w-0 items-center gap-2 text-left">
                           <span className="break-words text-sm font-bold text-slate-200">{biz.name}</span>
                           {assigned && <span className="shrink-0 text-[10px] text-slate-500">{expanded ? 'Hide' : 'Details'}</span>}
-                        </button>
-                        <button onClick={() => handleToggleBusinessAccess(selectedAdmin.id, biz.id, assigned)} disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`} className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-60 ${assigned ? 'bg-emerald-500/20 text-emerald-300' : 'bg-purple-500 text-slate-950'}`}>
+                        </PressableButton>
+                        <PressableButton onClick={() => handleToggleBusinessAccess(selectedAdmin.id, biz.id, assigned)} disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`} className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-60 ${assigned ? 'bg-emerald-500/20 text-emerald-300' : 'bg-purple-500 text-slate-950'}`}>
                           {accessUpdating === `${selectedAdmin.id}:${biz.id}` ? 'Saving...' : assigned ? 'Assigned' : 'Assign'}
-                        </button>
+                        </PressableButton>
                       </div>
-                      {assigned && expanded && (
-                        <div className="mt-3 space-y-2">
+                      <AnimatePresence initial={false}>
+                        {assigned && expanded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                          <div className="mt-3 space-y-2">
                           {PERMISSION_LIST.map((perm) => {
                             const row = selectedAdmin.permissions.find((x: any) => x.businessId === biz.id && x.permissionKey === perm.key);
                             const enabled = row ? row.enabled : perm.defaultForAdmin;
                             return (
-                              <button type="button" key={perm.key} disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`} onClick={() => handleTogglePermission(selectedAdmin.id, biz.id, perm.key, enabled, selectedAdmin.permissions)} className={`flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left disabled:opacity-60 ${enabled ? 'border-purple-500/40 bg-purple-500/10 text-purple-200' : 'border-slate-800 bg-slate-900 text-slate-500'}`}>
+                              <PressableButton type="button" key={perm.key} disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`} onClick={() => handleTogglePermission(selectedAdmin.id, biz.id, perm.key, enabled, selectedAdmin.permissions)} className={`flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left disabled:opacity-60 ${enabled ? 'border-purple-500/40 bg-purple-500/10 text-purple-200' : 'border-slate-800 bg-slate-900 text-slate-500'}`}>
                                 <span className="min-w-0 break-words text-xs font-bold">{perm.label}</span>
-                                <span className={`h-4 w-8 shrink-0 rounded-full p-0.5 ${enabled ? 'bg-purple-500 text-right' : 'bg-slate-700 text-left'}`}><span className="inline-block h-3 w-3 rounded-full bg-white" /></span>
-                              </button>
+                                <span className={`flex h-4 w-8 shrink-0 rounded-full p-0.5 ${enabled ? 'bg-purple-500 justify-end' : 'bg-slate-700 justify-start'}`}>
+                                  <motion.span layout transition={springSnappy} className="inline-block h-3 w-3 rounded-full bg-white" />
+                                </span>
+                              </PressableButton>
                             );
                           })}
-                        </div>
-                      )}
+                          </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   );
                 })}
               </div>
             </div>
-          </aside>
+          </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Admin Confirm */}
+      <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} maxWidth="max-w-sm">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl p-6 space-y-4">
+          <h3 className="text-base font-bold text-slate-100">Delete admin?</h3>
+          <p className="text-xs text-slate-400">Delete {selectedAdmin?.name}? This cannot be easily undone.</p>
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <PressableButton onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancel</PressableButton>
+            <PressableButton onClick={() => updateAdmin(selectedAdmin.active, true)} className="px-4 py-2 rounded-xl bg-red-500/15 text-red-300 text-xs font-bold">Delete</PressableButton>
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Create Admin Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} maxWidth="max-w-md">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
               <h3 className="text-base font-bold text-slate-100">Create New Admin Account</h3>
-              <button
+              <PressableButton
                 onClick={() => setShowCreateModal(false)}
                 className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </PressableButton>
             </div>
 
             <form onSubmit={handleCreateAdmin} className="p-6 space-y-4">
@@ -474,25 +434,24 @@ export default function AdminManagement() {
 
               {createError && <div role="alert" className="rounded-xl border border-red-500 bg-red-100/95 px-3 py-2 text-xs font-bold text-red-800">{createError}</div>}
               <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
-                <button
+                <PressableButton
                   type="button"
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
                 >
                   Cancel
-                </button>
-                <button
+                </PressableButton>
+                <PressableButton
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs shadow-lg shadow-purple-500/20"
                 >
                   {submitting ? 'Creating...' : 'Create Admin'}
-                </button>
+                </PressableButton>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
