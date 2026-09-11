@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { GameOverReason } from './fruitGameEngine';
+import MushroomIcon from '@/components/icons/MushroomIcon';
 
 /**
  * Full-viewport ambient background slicing layer. It sits BEHIND real dashboard
@@ -279,7 +280,7 @@ export default function FruitNinjaGame() {
             : 'border-rose-400/50 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30'
         }`}
       >
-        <span className="text-base leading-none">{'\u{1F344}'}</span>
+        <MushroomIcon className="h-4 w-4" strokeWidth={2.5} />
         <span className="hidden sm:inline">Mushroom Game</span>
         <span
           className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${enabled ? 'bg-emerald-400' : 'bg-rose-400/70'}`}
