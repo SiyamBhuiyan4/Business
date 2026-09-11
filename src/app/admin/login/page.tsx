@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { fadeScaleIn, springSnappy } from '@/lib/motion';
 import PressableButton from '@/components/motion/PressableButton';
+import AmbientBrandGraphic from '@/components/AmbientBrandGraphic';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -27,7 +28,9 @@ export default function AdminLoginPage() {
     }
     router.push('/admin/dashboard'); router.refresh();
   }
-  return <main className="min-h-screen bg-[#0b0f19] flex items-center justify-center p-4">
+  return <main className="relative min-h-screen overflow-hidden bg-[#0b0f19] flex items-center justify-center p-4">
+    <AmbientBrandGraphic className="-right-24 -top-24" />
+    <AmbientBrandGraphic className="-bottom-32 -left-20 rotate-180" />
     <motion.form
       onSubmit={submit}
       animate={shakeControls}

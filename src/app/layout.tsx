@@ -3,6 +3,7 @@ import { MotionConfig } from 'framer-motion';
 import './globals.css';
 import BlueprintAmbient from '@/components/BlueprintAmbient';
 import CursorTrail from '@/components/CursorTrail';
+import LoadingScreen from '@/components/LoadingScreen';
 import { ToastProvider } from '@/components/motion/Toast';
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className="min-h-screen font-sans antialiased">
         <MotionConfig reducedMotion="user">
           <ToastProvider>
+            <LoadingScreen />
             <BlueprintAmbient />
             <CursorTrail />
             <div className="relative z-10 min-h-screen">{children}</div>

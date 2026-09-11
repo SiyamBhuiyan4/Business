@@ -260,6 +260,8 @@ tbody tr:hover { background: rgba(255,255,255,.36); }
 @keyframes gauge-fill { to { stroke-dasharray: var(--gauge-pct, 65) 100; } }
 @keyframes flame-flicker { 0%, 100% { transform: translateY(0) rotate(-2deg); opacity: .88; } 50% { transform: translateY(-3px) rotate(3deg); opacity: 1; } }
 @keyframes night-drift { from { transform:translate3d(-2%,-1%,0) scale(1); } to { transform:translate3d(2%,2%,0) scale(1.08); } }
+@keyframes ambient-float { 0%, 100% { transform: translateY(0) rotate(-4deg); opacity: .1; } 50% { transform: translateY(-22px) rotate(4deg); opacity: .16; } }
+.ambient-sprout { animation: ambient-float 11s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 
 button, input, select, textarea { font: inherit; }
