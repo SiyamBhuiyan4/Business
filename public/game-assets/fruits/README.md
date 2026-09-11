@@ -13,7 +13,6 @@ The engine tries to load each file below; if a file is missing, it silently fall
 | `enoki.png` | Enoki |
 | `oyster.png` | Oyster |
 | `amanita.png` | Fly Agaric (Amanita) |
-| `toxic.png` | Toxic mushroom (instant game over if sliced) |
 
 **Guidelines:**
 - Square PNG, transparent background, ~256x256px.

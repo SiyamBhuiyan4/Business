@@ -18,16 +18,6 @@ export const FRUITS: FruitDef[] = [
   { key: 'amanita', emoji: '\u{1F344}', color: 0xd7263d, points: 25, radius: 44, spritePath: '/game-assets/fruits/amanita.png' },
 ];
 
-/** Toxic mushroom -- slicing it ends the game instantly, same role a "bomb" plays in classic slicing games. */
-export const BOMB: FruitDef = {
-  key: 'toxic',
-  emoji: '\u{2620}\u{FE0F}',
-  color: 0x4a1a5c,
-  points: 0,
-  radius: 40,
-  spritePath: '/game-assets/fruits/toxic.png',
-};
-
 export function randomFruit(): FruitDef {
   return FRUITS[Math.floor(Math.random() * FRUITS.length)];
 }

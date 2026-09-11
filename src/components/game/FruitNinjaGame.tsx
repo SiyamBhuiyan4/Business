@@ -5,32 +5,82 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { FruitSliceEngine } from './fruitGameEngine';
 
 /**
- * Always-on mini-game embedded at the bottom of every page (in normal document
- * flow, not a full-screen overlay) -- scroll to the end of any page to find it.
- * No activation gesture: it mounts and starts playing automatically.
+ * Full-viewport ambient background slicing layer. It sits BEHIND real dashboard
+ * UI (z-index below the app content) and dynamically excludes every real UI
+ * element's bounding box from slicing, so cards/buttons/inputs/tables keep
+ * working exactly as normal -- slicing only ever happens over empty background.
  */
+
+// Selectors covering every real "card"/interactive surface this app renders.
+// Anything matching these is a no-slice zone; everything else is fair game.
+const EXCLUSION_SELECTOR = [
+  'header',
+  'form',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'a[href]',
+  'table',
+  '[role="dialog"]',
+  '.glass-panel',
+  '.glass-button',
+  '.analytics-glass',
+  '.analytics-kpi',
+  '.admin-profile-card',
+  '.admin-stat',
+  '.admin-mini-stat',
+  '.product-card',
+  '.order-toolbar',
+  '.order-tabs',
+  '.heatmap-tile',
+  '.heatmap-legend',
+  '.metric-tile',
+  '.navbar-shell',
+  '.navbar-dropdown',
+  '.bulk-modal',
+].join(', ');
+
+const STORAGE_KEY = 'bizhub-mushroom-game-enabled';
+
+function computeExclusionRects(): DOMRect[] {
+  const rects: DOMRect[] = [];
+  document.querySelectorAll(EXCLUSION_SELECTOR).forEach((el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) rects.push(r);
+  });
+  return rects;
+}
+
 export default function FruitNinjaGame() {
+  const [enabled, setEnabled] = useState(true);
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
   const [multiplier, setMultiplier] = useState(1);
   const [combo, setCombo] = useState(0);
-  const [gameOver, setGameOver] = useState<number | null>(null);
-  const [restartKey, setRestartKey] = useState(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<FruitSliceEngine | null>(null);
 
-  const restartGame = useCallback(() => {
-    setGameOver(null);
-    setScore(0);
-    setLives(3);
-    setMultiplier(1);
-    setCombo(0);
-    setRestartKey((k) => k + 1);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved !== null) setEnabled(saved === 'on');
+    } catch {
+      // localStorage unavailable -- default stays on
+    }
   }, []);
 
+  const toggle = useCallback(() => {
+    setEnabled((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(STORAGE_KEY, next ? 'on' : 'off'); } catch {}
+      return next;
+    });
+  }, []);
+
+  // Mount/unmount the Pixi engine with the toggle
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!enabled || !containerRef.current) return;
     let cancelled = false;
 
     (async () => {
@@ -42,12 +92,11 @@ export default function FruitNinjaGame() {
 
       const engine = new Engine(containerRef.current, PIXI, {
         onScoreChange: setScore,
-        onLivesChange: setLives,
         onMultiplierChange: (m, c) => { setMultiplier(m); setCombo(c); },
-        onGameOver: (finalScore) => setGameOver(finalScore),
       });
       engineRef.current = engine;
       engine.start();
+      engine.setExclusionZones(computeExclusionRects());
     })();
 
     return () => {
@@ -55,92 +104,76 @@ export default function FruitNinjaGame() {
       engineRef.current?.destroy();
       engineRef.current = null;
     };
-  }, [restartKey]);
+  }, [enabled]);
+
+  // Keep exclusion zones fresh: on resize, on scroll, and on a slow poll to catch
+  // dynamic content changes (data loading, tab switches) without wiring into every component.
+  useEffect(() => {
+    if (!enabled) return;
+
+    let raf = 0;
+    const refresh = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => engineRef.current?.setExclusionZones(computeExclusionRects()));
+    };
+
+    window.addEventListener('resize', refresh);
+    window.addEventListener('scroll', refresh, { passive: true, capture: true });
+    const interval = window.setInterval(refresh, 1000);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', refresh);
+      window.removeEventListener('scroll', refresh, true);
+      window.clearInterval(interval);
+    };
+  }, [enabled]);
 
   return (
-    <div className="px-4 pb-10 pt-2 lg:px-8">
-    <section
-      className="relative mx-auto h-[420px] w-full max-w-7xl overflow-hidden rounded-3xl border border-white/10 shadow-2xl sm:h-[520px]"
-      style={{ background: 'linear-gradient(160deg, #2a1d13, #120d09)' }}
-    >
-      <div ref={containerRef} className="absolute inset-0" />
+    <>
+      {/* Full-viewport ambient canvas -- sits behind real UI (z-1), never intercepts clicks on cards */}
+      {enabled && (
+        <div
+          ref={containerRef}
+          data-game-ui
+          className="pointer-events-auto fixed inset-0 z-[1]"
+          style={{ background: 'transparent' }}
+        />
+      )}
 
-      {/* Title + lives - top left */}
-      <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-wrap items-center gap-3">
-        <span className="rounded-2xl bg-black/40 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-amber-300 backdrop-blur-sm">
-          {'\u{1F344}'} Mushroom Master
-        </span>
-        <span className="flex items-center gap-2 rounded-2xl bg-black/40 px-3 py-1.5 backdrop-blur-sm">
-          <span className="text-lg">{'\u{1F344}'.repeat(Math.max(0, lives))}</span>
-          <span className="text-xs font-bold text-white/70">x{Math.max(0, lives)}</span>
-        </span>
-      </div>
-
-      {/* Multiplier - center */}
+      {/* Floating score - subtle, bottom-right */}
       <AnimatePresence>
-        {gameOver === null && (
+        {enabled && (
           <motion.div
-            key={combo > 0 ? 'active' : 'idle'}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: combo > 0 ? 1 : 0.5, scale: 1 }}
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center"
+            data-game-ui
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="pointer-events-none fixed bottom-4 right-4 z-[2] rounded-2xl bg-black/30 px-3 py-1.5 text-right backdrop-blur-sm"
           >
-            {combo === 0 ? (
-              <p className="text-base font-black uppercase tracking-widest text-white/60 drop-shadow sm:text-lg">
-                Slice for fun!
-              </p>
-            ) : (
-              <motion.p
-                key={multiplier}
-                initial={{ scale: 1.4 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                className="text-3xl font-black text-amber-300 drop-shadow-[0_0_18px_rgba(252,211,77,.6)] sm:text-5xl"
-              >
-                x{multiplier} <span className="text-lg align-top sm:text-2xl">MULTIPLIER</span>
-              </motion.p>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Mushroom score </span>
+            <span className="text-sm font-black tabular-nums text-white/90">{score}</span>
+            {combo > 0 && (
+              <span className="ml-1.5 text-[10px] font-black text-amber-300">x{multiplier}</span>
             )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Score - bottom right */}
-      <div className="pointer-events-none absolute bottom-5 right-5 z-10 text-right">
-        <div className="text-[10px] font-bold uppercase tracking-widest text-white/50">Score</div>
-        <div className="text-4xl font-black tabular-nums text-white drop-shadow-[0_0_20px_rgba(255,255,255,.3)] sm:text-6xl">
-          {score}
-        </div>
-      </div>
+      {/* ON/OFF toggle - subtle, bottom-left */}
+      <button
+        data-game-ui
+        onClick={toggle}
+        title={enabled ? 'Turn off background slicing' : 'Turn on background slicing'}
+        className="pointer-events-auto fixed bottom-4 left-4 z-[2] flex items-center gap-1.5 rounded-2xl bg-black/30 px-3 py-1.5 text-[10px] font-bold text-white/70 backdrop-blur-sm hover:text-white"
+      >
+        <span>{'\u{1F344}'}</span>
+        <span>{enabled ? 'ON' : 'OFF'}</span>
+      </button>
 
-      {/* Game Over -- only covers this section, not the whole page */}
-      <AnimatePresence>
-        {gameOver !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 flex items-center justify-center bg-black/75"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-              className="w-full max-w-xs rounded-3xl border border-white/10 bg-slate-900 p-6 text-center shadow-2xl sm:max-w-sm sm:p-8"
-            >
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-400">Game Over</p>
-              <p className="mt-2 text-4xl font-black text-white sm:text-5xl">{gameOver}</p>
-              <p className="mt-1 text-xs text-slate-400">points sliced</p>
-              <button
-                onClick={restartGame}
-                className="mt-6 w-full rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-black text-slate-950 hover:bg-amber-300"
-              >
-                Play Again
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </section>
-    </div>
+      {/* Extends every page's scrollable height so there's always open, card-free
+          space at the bottom to slice in freely. */}
+      <div aria-hidden="true" style={{ height: '60vh' }} />
+    </>
   );
 }
