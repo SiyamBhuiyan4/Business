@@ -60,6 +60,8 @@ export class FruitSliceEngine {
   private trailGlow: PIXI_NS.Graphics;
 
   private textureCache: Map<string, PIXI_NS.Texture> = new Map();
+  /** Pre-cropped left/right halves of each real sprite, built once its full texture loads -- lets a slice fly apart as two actual half-images instead of a symmetric copy+copy fake. */
+  private halfTextureCache: Map<string, [PIXI_NS.Texture, PIXI_NS.Texture]> = new Map();
   private fruits: ActiveFruit[] = [];
   private particles: Particle[] = [];
   private trail: TrailPoint[] = [];
@@ -137,7 +139,9 @@ export class FruitSliceEngine {
           const head = await fetch(def.spritePath, { method: 'HEAD' });
           if (!head.ok) return;
           const texture = await this.PIXI.Assets.load(def.spritePath);
-          if (!this.destroyed) this.textureCache.set(def.key, texture);
+          if (this.destroyed) return;
+          this.textureCache.set(def.key, texture);
+          this.halfTextureCache.set(def.key, this.buildHalfTextures(texture));
         } catch {
           // No custom art for this fruit yet -- placeholder stays in use.
         }
@@ -242,10 +246,11 @@ export class FruitSliceEngine {
   /** Returns true if this slice ended the match (bomb) -- callers must stop touching any other fruit references from the same batch when that happens, since the board is wiped instantly. */
   private sliceFruit(fruit: ActiveFruit): boolean {
     fruit.sliced = true;
-    // Capture position before destroying the view -- PIXI nulls a destroyed
-    // DisplayObject's internal transform, so reading .x/.y after destroy() throws.
+    // Capture position/rotation before destroying the view -- PIXI nulls a destroyed
+    // DisplayObject's internal transform, so reading .x/.y/.rotation after destroy() throws.
     const x = fruit.view.x;
     const y = fruit.view.y;
+    const rotation = fruit.view.rotation;
     this.fruitLayer.removeChild(fruit.view);
     fruit.view.destroy({ children: true });
     this.fruits = this.fruits.filter((f) => f !== fruit);
@@ -270,7 +275,7 @@ export class FruitSliceEngine {
     this.callbacks.onScoreChange(this.score);
     this.callbacks.onMultiplierChange(this.multiplier, this.combo);
 
-    this.spawnHalves(fruit, x, y);
+    this.spawnHalves(fruit, x, y, rotation);
     this.spawnParticleBurst(x, y, fruit.def.color, 14);
     this.spawnSporeCloud(x, y);
     return false;
@@ -323,13 +328,22 @@ export class FruitSliceEngine {
     }
   }
 
-  private spawnHalves(fruit: ActiveFruit, x: number, y: number) {
-    for (const dir of [-1, 1]) {
-      const half = this.createFruitVisual(fruit.def, 0.72);
+  private spawnHalves(fruit: ActiveFruit, x: number, y: number, baseRotation: number) {
+    const halves = this.halfTextureCache.get(fruit.def.key);
+
+    const dirs = [-1, 1];
+    for (let i = 0; i < dirs.length; i++) {
+      const dir = dirs[i];
+      const half = halves
+        ? this.createSpriteHalfVisual(halves[i], i === 0 ? 'left' : 'right', fruit.def.radius * 0.72)
+        : this.createFruitVisual(fruit.def, 0.72);
       half.x = x;
       half.y = y;
+      half.rotation = baseRotation;
       half.alpha = 0.95;
       this.particleLayer.addChild(half);
+      // Halves fly apart away from each other and tumble outward, on top of
+      // whatever spin the whole mushroom already had.
       const vx = dir * (2 + Math.random() * 2.5);
       const vy = -(2 + Math.random() * 2);
       this.particles.push({
@@ -340,6 +354,32 @@ export class FruitSliceEngine {
         maxLife: 650,
       });
     }
+  }
+
+  /** Splits a loaded sprite texture into left/right halves via a static crop rectangle -- cheap (no per-frame render-to-texture) and reads correctly since sprites also spin as they fly apart. */
+  private buildHalfTextures(texture: PIXI_NS.Texture): [PIXI_NS.Texture, PIXI_NS.Texture] {
+    const PIXI = this.PIXI;
+    const f = texture.frame;
+    const halfW = f.width / 2;
+    const left = new PIXI.Texture(texture.baseTexture, new PIXI.Rectangle(f.x, f.y, halfW, f.height));
+    const right = new PIXI.Texture(texture.baseTexture, new PIXI.Rectangle(f.x + halfW, f.y, halfW, f.height));
+    return [left, right];
+  }
+
+  /** A single sprite half, offset so its cut edge sits at the container origin -- the two
+   * halves' cut edges start touching at the slice point and separate cleanly as they fly apart. */
+  private createSpriteHalfVisual(halfTexture: PIXI_NS.Texture, side: 'left' | 'right', targetRadius: number): PIXI_NS.Container {
+    const PIXI = this.PIXI;
+    const container = new PIXI.Container();
+    const sprite = new PIXI.Sprite(halfTexture);
+    const fullSize = Math.max(halfTexture.width * 2, halfTexture.height) || 1;
+    const scale = (targetRadius * 2) / fullSize;
+    sprite.scale.set(scale);
+    sprite.anchor.set(0.5, 0.5);
+    // Left half's cut edge is its right edge; right half's cut edge is its left edge.
+    sprite.x = (side === 'left' ? -1 : 1) * halfTexture.width * scale * 0.5;
+    container.addChild(sprite);
+    return container;
   }
 
   private spawnParticleBurst(x: number, y: number, color: number, count: number) {

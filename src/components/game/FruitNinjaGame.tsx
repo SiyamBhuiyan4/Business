@@ -73,10 +73,12 @@ export default function FruitNinjaGame() {
   const [combo, setCombo] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(20);
   const [flashInfo, setFlashInfo] = useState<{ score: number; reason: GameOverReason } | null>(null);
+  const [bombFxKey, setBombFxKey] = useState(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<import('./fruitGameEngine').FruitSliceEngine | null>(null);
   const flashTimeoutRef = useRef<number | null>(null);
+  const bombFxTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     try {
@@ -102,6 +104,31 @@ export default function FruitNinjaGame() {
       window.clearTimeout(flashTimeoutRef.current);
       flashTimeoutRef.current = null;
     }
+  }, []);
+
+  // Bomb impact FX: a brief canvas shake (~400ms) + a red vignette that fades over
+  // ~1s. Scoped to the game's own layer + a decorative overlay only -- never to
+  // real dashboard UI -- so it reads as an impact without ever jittering a button
+  // or table. The shake is applied imperatively (classList + a forced reflow)
+  // rather than through React state/rAF so it fires the instant a bomb is sliced,
+  // independent of paint timing; the vignette restarts via bombFxKey remounting
+  // a fresh element, so back-to-back bombs both re-trigger cleanly.
+  const [vignetteActive, setVignetteActive] = useState(false);
+  const shakeTimeoutRef = useRef<number | null>(null);
+  const triggerBombFx = useCallback(() => {
+    setBombFxKey((k) => k + 1);
+    setVignetteActive(true);
+    if (bombFxTimeoutRef.current !== null) window.clearTimeout(bombFxTimeoutRef.current);
+    bombFxTimeoutRef.current = window.setTimeout(() => setVignetteActive(false), 1000);
+
+    const el = containerRef.current;
+    if (el) {
+      el.classList.remove('bomb-shake');
+      void el.offsetWidth; // force reflow so the animation restarts even back-to-back
+      el.classList.add('bomb-shake');
+    }
+    if (shakeTimeoutRef.current !== null) window.clearTimeout(shakeTimeoutRef.current);
+    shakeTimeoutRef.current = window.setTimeout(() => el?.classList.remove('bomb-shake'), 420);
   }, []);
 
   // Mount/unmount the Pixi engine with the toggle
@@ -131,6 +158,7 @@ export default function FruitNinjaGame() {
           // Engine has already wiped the board and reset itself to idle internally.
           // We just briefly flash the result in the HUD, then it fades back to the
           // normal idle prompt -- no button, no interruption.
+          if (reason === 'bomb') triggerBombFx();
           setUiState('idle');
           setFlashInfo({ score: finalScore, reason });
           setHighScore((prev) => {
@@ -150,10 +178,12 @@ export default function FruitNinjaGame() {
     return () => {
       cancelled = true;
       clearFlashTimeout();
+      if (shakeTimeoutRef.current !== null) window.clearTimeout(shakeTimeoutRef.current);
+      if (bombFxTimeoutRef.current !== null) window.clearTimeout(bombFxTimeoutRef.current);
       engineRef.current?.destroy();
       engineRef.current = null;
     };
-  }, [enabled, clearFlashTimeout]);
+  }, [enabled, clearFlashTimeout, triggerBombFx]);
 
   // Keep exclusion zones fresh: on resize, on scroll, and on a slow poll to catch
   // dynamic content changes (data loading, tab switches) without wiring into every component.
@@ -180,7 +210,8 @@ export default function FruitNinjaGame() {
 
   return (
     <>
-      {/* Full-viewport ambient canvas -- sits behind real UI (z-1), never intercepts clicks on cards */}
+      {/* Full-viewport ambient canvas -- sits behind real UI (z-1), never intercepts clicks on cards.
+          A bomb hit briefly shakes just this layer, never real UI. */}
       {enabled && (
         <div
           ref={containerRef}
@@ -188,6 +219,11 @@ export default function FruitNinjaGame() {
           className="pointer-events-auto fixed inset-0 z-[1]"
           style={{ background: 'transparent' }}
         />
+      )}
+
+      {/* Red vignette flash on bomb hit -- purely decorative, never blocks pointer events. */}
+      {enabled && vignetteActive && (
+        <div key={bombFxKey} aria-hidden="true" className="bomb-vignette pointer-events-none fixed inset-0 z-[3]" />
       )}
 
       {/* Floating score / status - subtle, bottom-right. Doubles as the Game Over
