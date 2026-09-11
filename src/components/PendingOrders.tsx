@@ -1,7 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { confirmMutation } from '@/lib/confirmMutation';
+import Modal from '@/components/motion/Modal';
+import PressableButton from '@/components/motion/PressableButton';
+import Tabs from '@/components/motion/Tabs';
+import { useToast } from '@/components/motion/Toast';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 import {
   ShoppingBag,
   Filter,
@@ -32,6 +38,7 @@ interface PendingOrdersProps {
 }
 
 export default function PendingOrders({ businessId, permissions, onOrderChange }: PendingOrdersProps) {
+  const toast = useToast();
   const { downloadTemplate } = useCSVImport();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,15 +135,15 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
     if (!customerContact || !deliveryAddress || !expectedDeliveryDate) return;
     const approval = await confirmMutation(`You are about to update order ${order.id}.`); if (!approval) return;
     const res = await fetch(`/api/businesses/${businessId}/orders`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order.id, customerName, customerContact, deliveryAddress, expectedDeliveryDate, ...approval }) });
-    if (res.ok) { fetchOrders(); if (onOrderChange) onOrderChange(); }
-    else alert((await res.json()).error || 'Failed to edit order');
+    if (res.ok) { fetchOrders(); if (onOrderChange) onOrderChange(); toast.success('Order updated'); }
+    else toast.error((await res.json()).error || 'Failed to edit order');
   };
 
   const handleDeleteOrder = async (order: any) => {
     const approval = await confirmMutation(`You are about to delete order for ${order.customerName}. This cannot be undone.`); if (!approval) return;
     const res = await fetch(`/api/businesses/${businessId}/orders?orderId=${encodeURIComponent(order.id)}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(approval) });
-    if (res.ok) { setSelectedOrder(null); fetchOrders(); if (onOrderChange) onOrderChange(); }
-    else alert((await res.json()).error || 'Failed to delete order');
+    if (res.ok) { setSelectedOrder(null); fetchOrders(); if (onOrderChange) onOrderChange(); toast.success('Order deleted'); }
+    else toast.error((await res.json()).error || 'Failed to delete order');
   };
 
   const handleAddItemRow = () => {
@@ -154,7 +161,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerContact || !deliveryAddress || orderItems.length === 0 || orderItems.some((item) => (!item.productId && !item.productName?.trim()) || (!item.productId && (!item.priceAtOrder || item.priceAtOrder <= 0)))) {
-      alert('Please fill in all required customer and product details');
+      toast.error('Please fill in all required customer and product details');
       return;
     }
 
@@ -181,12 +188,14 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
         setNotes('');
         fetchOrders();
         if (onOrderChange) onOrderChange();
+        toast.success('Order created');
       } else {
         const json = await res.json();
-        alert(json.error || 'Failed to create order');
+        toast.error(json.error || 'Failed to create order');
       }
     } catch (err) {
       console.error('Create order error:', err);
+      toast.error('Failed to create order');
     } finally {
       setSubmitting(false);
     }
@@ -219,17 +228,17 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
 
         {permissions['orders:manage'] && (
           <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={downloadTemplate} className="order-action order-action-edit" title="Download the CSV template">
+          <PressableButton type="button" onClick={downloadTemplate} className="order-action order-action-edit" title="Download the CSV template">
             <FileText className="mr-1 h-4 w-4" /> Download CSV Template
-          </button>
-          <button type="button" onClick={() => setShowBulkModal(true)} className="order-action order-action-edit"><Upload className="mr-1 h-4 w-4"/> Import CSV</button>
-          <button
+          </PressableButton>
+          <PressableButton type="button" onClick={() => setShowBulkModal(true)} className="order-action order-action-edit"><Upload className="mr-1 h-4 w-4"/> Import CSV</PressableButton>
+          <PressableButton
             onClick={() => setShowCreateModal(true)}
             className="order-primary flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             Create New Order
-          </button>
+          </PressableButton>
           </div>
         )}
       </div>
@@ -251,19 +260,15 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
         <div className="flex flex-wrap items-center gap-3">
           {/* Status Tabs */}
           <div className="order-tabs flex p-1 rounded-xl">
-            {['PENDING', 'IN_PROGRESS', 'DELIVERED', 'CANCELLED', 'ALL'].map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  statusFilter === st
-                    ? 'order-tab-active text-white shadow-md'
-                    : 'text-[#475569] hover:bg-slate-900/5'
-                }`}
-              >
-                {st.replace('_', ' ')}
-              </button>
-            ))}
+            <Tabs
+              items={['PENDING', 'IN_PROGRESS', 'DELIVERED', 'CANCELLED', 'ALL'].map((st) => ({ key: st, label: st.replace('_', ' ') }))}
+              active={statusFilter}
+              onChange={setStatusFilter}
+              layoutId="order-status-pill"
+              tabClassName="px-3 py-1.5 rounded-lg"
+              activeTextClassName="text-white"
+              inactiveTextClassName="text-[#475569] hover:bg-slate-900/5"
+            />
           </div>
 
           <select value={createdByFilter} onChange={(e) => setCreatedByFilter(e.target.value)} className="order-search text-[#0F172A] text-xs rounded-xl px-3 py-2">
@@ -291,10 +296,12 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                   <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <motion.tbody className="divide-y divide-slate-800/60" variants={staggerContainer} initial="hidden" animate="visible">
                 {filteredOrders.map((ord) => (
-                  <tr
+                  <motion.tr
                     key={ord.id}
+                    variants={staggerItem}
+                    whileHover={{ y: -1 }}
                     className="order-row transition-colors group cursor-pointer"
                     onClick={() => setSelectedOrder(ord)}
                   >
@@ -373,21 +380,21 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                     </td>
 
                     <td className="px-5 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <button
+                      <PressableButton
                         onClick={() => setSelectedOrder(ord)}
                         className="order-action order-action-view"
                         title="View details"
                       >
                         <Eye className="w-4 h-4" />
-                      </button>
+                      </PressableButton>
                       {permissions['orders:manage'] && <>
-                        <button onClick={() => handleEditOrder(ord)} className="order-action order-action-edit ml-1" title="Edit order">Edit</button>
-                        <button onClick={() => handleDeleteOrder(ord)} className="order-action order-action-delete ml-1" title="Delete order">Delete</button>
+                        <PressableButton onClick={() => handleEditOrder(ord)} className="order-action order-action-edit ml-1" title="Edit order">Edit</PressableButton>
+                        <PressableButton onClick={() => handleDeleteOrder(ord)} className="order-action order-action-delete ml-1" title="Delete order">Delete</PressableButton>
                       </>}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
-              </tbody>
+              </motion.tbody>
             </table>
           </div>
         ) : (
@@ -400,9 +407,9 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
       </div>
 
       {/* View Order Detail Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col">
+      <Modal open={!!selectedOrder} onClose={() => setSelectedOrder(null)} maxWidth="max-w-xl" className="max-h-[90vh]">
+        {selectedOrder && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
               <div>
                 <span className="text-xs text-slate-500 uppercase tracking-wider font-mono">
@@ -410,12 +417,12 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                 </span>
                 <h3 className="text-base font-bold text-slate-100">{selectedOrder.customerName}</h3>
               </div>
-              <button
+              <PressableButton
                 onClick={() => setSelectedOrder(null)}
                 className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
               >
                 <XCircle className="w-5 h-5" />
-              </button>
+              </PressableButton>
             </div>
 
             <div className="p-6 space-y-4 overflow-y-auto">
@@ -471,30 +478,29 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
               <span className="text-[11px] text-slate-500">
                 Created by: {selectedOrder.createdByUser?.name || 'Super Admin'}
               </span>
-              <button
+              <PressableButton
                 onClick={() => setSelectedOrder(null)}
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs"
               >
                 Close
-              </button>
-              {permissions['orders:manage'] && <button onClick={() => handleDeleteOrder(selectedOrder)} className="px-4 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-semibold text-xs">Delete</button>}
+              </PressableButton>
+              {permissions['orders:manage'] && <PressableButton onClick={() => handleDeleteOrder(selectedOrder)} className="px-4 py-2 rounded-xl bg-rose-500/15 text-rose-300 font-semibold text-xs">Delete</PressableButton>}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Create Order Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} maxWidth="max-w-xl" className="max-h-[90vh]">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
               <h3 className="text-base font-bold text-slate-100">Create New Business Order</h3>
-              <button
+              <PressableButton
                 onClick={() => setShowCreateModal(false)}
                 className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
               >
                 <XCircle className="w-5 h-5" />
-              </button>
+              </PressableButton>
             </div>
 
             <form onSubmit={handleCreateOrder} className="p-6 space-y-4 overflow-y-auto flex-1">
@@ -551,17 +557,26 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
               <div className="space-y-2 pt-2 border-t border-slate-800">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-slate-300">Order Items</label>
-                  <button
+                  <PressableButton
                     type="button"
                     onClick={handleAddItemRow}
-                    className="text-xs text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                    className="text-xs text-emerald-400 font-bold flex items-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Item Line
-                  </button>
+                  </PressableButton>
                 </div>
 
-                {orderItems.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
+                <AnimatePresence initial={false}>
+                  {orderItems.map((item, idx) => (
+                    <motion.div
+                      key={idx}
+                      layout
+                      initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                      animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
+                      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center gap-3 overflow-hidden"
+                    >
                     <input required value={item.productName || ''} onChange={(e) => { const updated = [...orderItems]; updated[idx].productId = ''; updated[idx].productName = e.target.value; setOrderItems(updated); }} placeholder="Item Name" className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200" />
                     <input required type="number" min="0.01" step="0.01" value={item.priceAtOrder || ''} onChange={(e) => { const updated = [...orderItems]; updated[idx].priceAtOrder = parseFloat(e.target.value) || 0; setOrderItems(updated); }} placeholder="Unit Price (৳)" className="w-32 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200" />
 
@@ -578,16 +593,17 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                     />
 
                     {orderItems.length > 1 && (
-                      <button
+                      <PressableButton
                         type="button"
                         onClick={() => handleRemoveItemRow(idx)}
                         className="text-rose-400 hover:text-rose-300 text-xs p-1"
                       >
                         ✕
-                      </button>
+                      </PressableButton>
                     )}
-                  </div>
-                ))}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
 
               <div>
@@ -602,25 +618,24 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
-                <button
+                <PressableButton
                   type="button"
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
                 >
                   Cancel
-                </button>
-                <button
+                </PressableButton>
+                <PressableButton
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20"
                 >
                   {submitting ? 'Creating Order...' : 'Submit Order'}
-                </button>
+                </PressableButton>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
