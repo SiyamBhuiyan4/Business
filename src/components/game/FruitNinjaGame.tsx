@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { FruitSliceEngine, GameOverReason } from './fruitGameEngine';
+import type { GameOverReason } from './fruitGameEngine';
 
 /**
  * Full-viewport ambient background slicing layer. It sits BEHIND real dashboard
@@ -12,6 +12,11 @@ import type { FruitSliceEngine, GameOverReason } from './fruitGameEngine';
  *
  * Controls are hover-only: no click/press is required, just move the cursor
  * across a mushroom on empty background to slice it (trackpad swipe friendly).
+ *
+ * Game Over is seamless and automatic: no modal, no button. The engine wipes
+ * the board and drops back to idle the instant a bomb is sliced or the 20s
+ * inactivity timer expires; the host just flashes the final score briefly in
+ * the same small HUD widget, then the very next slice starts a new match.
  */
 
 // Selectors covering every real "card"/interactive surface this app renders.
@@ -46,6 +51,7 @@ const EXCLUSION_SELECTOR = [
 
 const ENABLED_KEY = 'bizhub-mushroom-game-enabled';
 const HIGH_SCORE_KEY = 'bizhub-mushroom-high-score';
+const FLASH_DURATION_MS = 2200;
 
 function computeExclusionRects(): DOMRect[] {
   const rects: DOMRect[] = [];
@@ -56,7 +62,7 @@ function computeExclusionRects(): DOMRect[] {
   return rects;
 }
 
-type UiState = 'idle' | 'active' | 'gameover';
+type UiState = 'idle' | 'active';
 
 export default function FruitNinjaGame() {
   const [enabled, setEnabled] = useState(true);
@@ -66,11 +72,11 @@ export default function FruitNinjaGame() {
   const [multiplier, setMultiplier] = useState(1);
   const [combo, setCombo] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(20);
-  const [gameOverInfo, setGameOverInfo] = useState<{ score: number; reason: GameOverReason } | null>(null);
-  const [restartKey, setRestartKey] = useState(0);
+  const [flashInfo, setFlashInfo] = useState<{ score: number; reason: GameOverReason } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const engineRef = useRef<FruitSliceEngine | null>(null);
+  const engineRef = useRef<import('./fruitGameEngine').FruitSliceEngine | null>(null);
+  const flashTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     try {
@@ -91,17 +97,14 @@ export default function FruitNinjaGame() {
     });
   }, []);
 
-  const playAgain = useCallback(() => {
-    setGameOverInfo(null);
-    setUiState('idle');
-    setScore(0);
-    setMultiplier(1);
-    setCombo(0);
-    setSecondsLeft(20);
-    engineRef.current?.reset();
+  const clearFlashTimeout = useCallback(() => {
+    if (flashTimeoutRef.current !== null) {
+      window.clearTimeout(flashTimeoutRef.current);
+      flashTimeoutRef.current = null;
+    }
   }, []);
 
-  // Mount/unmount the Pixi engine with the toggle (and on restart)
+  // Mount/unmount the Pixi engine with the toggle
   useEffect(() => {
     if (!enabled || !containerRef.current) return;
     let cancelled = false;
@@ -116,16 +119,27 @@ export default function FruitNinjaGame() {
       const engine = new Engine(containerRef.current, PIXI, {
         onScoreChange: setScore,
         onMultiplierChange: (m, c) => { setMultiplier(m); setCombo(c); },
-        onActivate: () => { setUiState('active'); setSecondsLeft(20); },
+        onActivate: () => {
+          // A new match just started -- drop any lingering game-over flash immediately.
+          clearFlashTimeout();
+          setFlashInfo(null);
+          setUiState('active');
+          setSecondsLeft(20);
+        },
         onCountdownTick: setSecondsLeft,
         onGameOver: (finalScore, reason) => {
-          setUiState('gameover');
-          setGameOverInfo({ score: finalScore, reason });
+          // Engine has already wiped the board and reset itself to idle internally.
+          // We just briefly flash the result in the HUD, then it fades back to the
+          // normal idle prompt -- no button, no interruption.
+          setUiState('idle');
+          setFlashInfo({ score: finalScore, reason });
           setHighScore((prev) => {
             if (finalScore <= prev) return prev;
             try { localStorage.setItem(HIGH_SCORE_KEY, String(finalScore)); } catch {}
             return finalScore;
           });
+          clearFlashTimeout();
+          flashTimeoutRef.current = window.setTimeout(() => setFlashInfo(null), FLASH_DURATION_MS);
         },
       });
       engineRef.current = engine;
@@ -135,10 +149,11 @@ export default function FruitNinjaGame() {
 
     return () => {
       cancelled = true;
+      clearFlashTimeout();
       engineRef.current?.destroy();
       engineRef.current = null;
     };
-  }, [enabled, restartKey]);
+  }, [enabled, clearFlashTimeout]);
 
   // Keep exclusion zones fresh: on resize, on scroll, and on a slow poll to catch
   // dynamic content changes (data loading, tab switches) without wiring into every component.
@@ -175,7 +190,8 @@ export default function FruitNinjaGame() {
         />
       )}
 
-      {/* Floating score / status - subtle, bottom-right */}
+      {/* Floating score / status - subtle, bottom-right. Doubles as the Game Over
+          flash: briefly shows the final score + cause, then eases back to normal. */}
       <AnimatePresence>
         {enabled && (
           <motion.div
@@ -185,19 +201,31 @@ export default function FruitNinjaGame() {
             exit={{ opacity: 0, y: 8 }}
             className="pointer-events-none fixed bottom-4 right-4 z-[2] rounded-2xl bg-black/30 px-3 py-1.5 text-right backdrop-blur-sm"
           >
-            {uiState === 'idle' ? (
-              <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Slice a mushroom to start</span>
-            ) : (
-              <>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Score </span>
-                <span className="text-sm font-black tabular-nums text-white/90">{score}</span>
-                {combo > 0 && <span className="ml-1.5 text-[10px] font-black text-amber-300">x{multiplier}</span>}
-                {uiState === 'active' && (
+            <div key={flashInfo ? 'flash' : uiState}>
+              {flashInfo ? (
+                <>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-rose-400">
+                    {flashInfo.reason === 'bomb' ? '💥 Bomb!' : '⏱ Time out'}
+                  </span>
+                  <span className="ml-1.5 text-sm font-black tabular-nums text-white/90">{flashInfo.score}</span>
+                </>
+              ) : uiState === 'idle' ? (
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">
+                  Slice a mushroom to start
+                </span>
+              ) : (
+                <>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Score </span>
+                  <span className="text-sm font-black tabular-nums text-white/90">{score}</span>
+                  {combo > 0 && <span className="ml-1.5 text-[10px] font-black text-amber-300">x{multiplier}</span>}
                   <span className={`ml-2 text-[10px] font-bold tabular-nums ${secondsLeft <= 5 ? 'text-rose-400' : 'text-white/40'}`}>
                     {'⏱'} {secondsLeft}s
                   </span>
-                )}
-              </>
+                </>
+              )}
+            </div>
+            {highScore > 0 && (
+              <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-widest text-white/30">Best {highScore}</div>
             )}
           </motion.div>
         )}
@@ -213,35 +241,6 @@ export default function FruitNinjaGame() {
         <span>{'\u{1F344}'}</span>
         <span>{enabled ? 'ON' : 'OFF'}</span>
       </button>
-
-      {/* Game Over - small floating card, does NOT block or dim the rest of the dashboard */}
-      <AnimatePresence>
-        {gameOverInfo && (
-          <motion.div
-            data-game-ui
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 10 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-            className="pointer-events-auto fixed bottom-16 right-4 z-[3] w-64 rounded-2xl border border-white/10 bg-slate-900/95 p-4 text-center shadow-2xl backdrop-blur-md"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
-              {gameOverInfo.reason === 'bomb' ? 'Bomb Exploded!' : 'Inactivity Timeout'}
-            </p>
-            <p className="mt-1 text-[10px] text-slate-400">
-              {gameOverInfo.reason === 'bomb' ? 'You sliced a bomb.' : "You went 20s without a slice."}
-            </p>
-            <p className="mt-2 text-3xl font-black text-white">{gameOverInfo.score}</p>
-            <p className="text-[10px] text-slate-500">Final score {'·'} Best: {highScore}</p>
-            <button
-              onClick={playAgain}
-              className="mt-3 w-full rounded-xl bg-amber-400 px-4 py-2 text-xs font-black text-slate-950 hover:bg-amber-300"
-            >
-              Play Again
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Extends every page's scrollable height so there's always open, card-free
           space at the bottom to slice in freely. */}

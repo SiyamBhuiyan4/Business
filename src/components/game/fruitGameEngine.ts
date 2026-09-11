@@ -40,7 +40,7 @@ interface Particle {
   expands?: boolean;
 }
 
-type GameState = 'idle' | 'active' | 'gameover';
+type GameState = 'idle' | 'active';
 
 const GRAVITY = 0.32;
 const COMBO_WINDOW_MS = 1100;
@@ -117,24 +117,6 @@ export class FruitSliceEngine {
     void this.preloadTextures();
   }
 
-  /** Fully resets for "Play Again": back to idle, waiting for the next first slice. */
-  reset() {
-    for (const f of this.fruits) { this.fruitLayer.removeChild(f.view); f.view.destroy({ children: true }); }
-    for (const p of this.particles) { this.particleLayer.removeChild(p.view); p.view.destroy({ children: true }); }
-    this.fruits = [];
-    this.particles = [];
-    this.trail = [];
-    this.lastPoint = null;
-    this.state = 'idle';
-    this.score = 0;
-    this.combo = 0;
-    this.comboTimer = 0;
-    this.multiplier = 1;
-    this.lastCountdownSecond = -1;
-    this.callbacks.onScoreChange(this.score);
-    this.callbacks.onMultiplierChange(this.multiplier, this.combo);
-  }
-
   /** Called by the host component whenever real UI element positions change (mount, resize, scroll, DOM updates). */
   setExclusionZones(rects: DOMRect[]) {
     this.exclusionRects = rects;
@@ -171,7 +153,6 @@ export class FruitSliceEngine {
   }
 
   private handlePointerMove(e: PointerEvent) {
-    if (this.state === 'gameover') return;
     const now = performance.now();
     const p = { x: e.clientX, y: e.clientY, t: now };
 
@@ -194,7 +175,10 @@ export class FruitSliceEngine {
       if (fruit.sliced) continue;
       const dist = pointToSegmentDistance(fruit.view.x, fruit.view.y, a.x, a.y, b.x, b.y);
       if (dist <= fruit.radius) {
-        this.sliceFruit(fruit);
+        const endedMatch = this.sliceFruit(fruit);
+        // A bomb just wiped the board (see endGame) -- the rest of this.fruits from
+        // before that point are already-destroyed views, so stop touching them.
+        if (endedMatch) return;
       }
     }
   }
@@ -255,8 +239,8 @@ export class FruitSliceEngine {
     });
   }
 
-  private sliceFruit(fruit: ActiveFruit) {
-    if (this.state === 'gameover') return;
+  /** Returns true if this slice ended the match (bomb) -- callers must stop touching any other fruit references from the same batch when that happens, since the board is wiped instantly. */
+  private sliceFruit(fruit: ActiveFruit): boolean {
     fruit.sliced = true;
     // Capture position before destroying the view -- PIXI nulls a destroyed
     // DisplayObject's internal transform, so reading .x/.y after destroy() throws.
@@ -269,7 +253,7 @@ export class FruitSliceEngine {
     if (fruit.isBomb) {
       this.spawnParticleBurst(x, y, 0xff5555, 24);
       this.endGame('bomb');
-      return;
+      return true;
     }
 
     const wasIdle = this.state === 'idle';
@@ -289,12 +273,31 @@ export class FruitSliceEngine {
     this.spawnHalves(fruit, x, y);
     this.spawnParticleBurst(x, y, fruit.def.color, 14);
     this.spawnSporeCloud(x, y);
+    return false;
   }
 
+  /** Instantly wipes the board and drops back to idle -- no blocking "game over"
+   * phase. The host is notified purely so it can flash the final score in the
+   * HUD; the very next slice on empty background starts a brand new match. */
   private endGame(reason: GameOverReason) {
-    if (this.state === 'gameover') return;
-    this.state = 'gameover';
-    this.callbacks.onGameOver(this.score, reason);
+    const finalScore = this.score;
+
+    for (const f of this.fruits) { this.fruitLayer.removeChild(f.view); f.view.destroy({ children: true }); }
+    for (const p of this.particles) { this.particleLayer.removeChild(p.view); p.view.destroy({ children: true }); }
+    this.fruits = [];
+    this.particles = [];
+    this.trail = [];
+    this.lastPoint = null;
+
+    this.state = 'idle';
+    this.score = 0;
+    this.combo = 0;
+    this.comboTimer = 0;
+    this.multiplier = 1;
+    this.lastCountdownSecond = -1;
+    this.callbacks.onScoreChange(this.score);
+    this.callbacks.onMultiplierChange(this.multiplier, this.combo);
+    this.callbacks.onGameOver(finalScore, reason);
   }
 
   /** Soft, slow-expanding puffs to sell the "spores releasing" moment on a mushroom slice. */
@@ -370,24 +373,22 @@ export class FruitSliceEngine {
     const w = this.app.renderer.width / this.app.renderer.resolution;
     const h = this.app.renderer.height / this.app.renderer.resolution;
 
-    if (this.state !== 'gameover') {
-      // spawn logic: rapid waves every 0.8-1.2s
-      this.spawnTimer += dtMs;
-      if (this.spawnTimer >= this.spawnInterval) {
-        this.spawnTimer = 0;
-        this.spawnInterval = 800 + Math.random() * 400;
-        this.spawnFruit();
-        if (Math.random() < 0.3) this.spawnFruit();
-      }
+    // spawn logic: waves of 2-4 items every 0.8-1.2s, across bottom/left/right
+    this.spawnTimer += dtMs;
+    if (this.spawnTimer >= this.spawnInterval) {
+      this.spawnTimer = 0;
+      this.spawnInterval = 800 + Math.random() * 400;
+      const waveSize = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4
+      for (let i = 0; i < waveSize; i++) this.spawnFruit();
+    }
 
-      // combo decay
-      if (this.comboTimer > 0) {
-        this.comboTimer -= dtMs;
-        if (this.comboTimer <= 0) {
-          this.combo = 0;
-          this.multiplier = 1;
-          this.callbacks.onMultiplierChange(this.multiplier, this.combo);
-        }
+    // combo decay
+    if (this.comboTimer > 0) {
+      this.comboTimer -= dtMs;
+      if (this.comboTimer <= 0) {
+        this.combo = 0;
+        this.multiplier = 1;
+        this.callbacks.onMultiplierChange(this.multiplier, this.combo);
       }
     }
 
