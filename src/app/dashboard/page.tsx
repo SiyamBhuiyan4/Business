@@ -165,10 +165,11 @@ export default function DashboardOverviewPage() {
             <div className="py-16 text-center text-slate-500 text-sm">Loading workspaces...</div>
           ) : businesses.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {businesses.map((biz) => (
+              {businesses.map((biz, index) => (
                 <div
                   key={biz.id}
-                  className="glass-panel group flex flex-col justify-between rounded-3xl p-5 transition-all hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(74,61,50,.14)] sm:p-6"
+                  style={{ '--stagger': `${index * 75}ms` } as React.CSSProperties}
+                  className="glass-panel workspace-card group flex flex-col justify-between rounded-3xl p-5 transition-all hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(74,61,50,.14)] sm:p-6"
                 >
                   <div className="space-y-5">
                     {/* Header */}

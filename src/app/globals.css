@@ -188,6 +188,13 @@ html.dark .navbar-dropdown { background:rgba(15,23,42,.96);border-color:rgba(56,
   .heatmap-revenue { color: #0F172A; font-size: 12px; font-weight: 700; }
   .heatmap-fire { color: #fff; background: #D97706; box-shadow: 0 0 12px rgba(217,119,6,.6); animation: flame-flicker 1.15s ease-in-out infinite; }
   .metric-tile { position: relative; min-height: 126px; overflow: hidden; border: 1px solid rgba(255,255,255,.92); border-radius: 16px; padding: 16px; background: rgba(255,255,255,.55); box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 9px 22px rgba(120,100,80,.08); backdrop-filter: blur(16px); }
+  .workspace-card { animation: workspace-enter .65s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--stagger, 0ms); }
+  .metric-tile { transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease, border-color .28s ease; }
+  .metric-tile:hover { transform: translateY(-4px) scale(1.015); border-color: rgba(200,138,88,.55); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 16px 30px rgba(120,100,80,.14); }
+  .glass-button { position: relative; overflow: hidden; transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease; }
+  .glass-button::after { content: ''; position: absolute; inset: 0 auto 0 -120%; width: 65%; transform: skewX(-18deg); background: rgba(255,255,255,.18); transition: left .55s ease; }
+  .glass-button:hover { transform: translateY(-2px) scale(1.015); box-shadow: 0 14px 30px -5px rgba(26,83,92,.5), inset 0 1px 0 rgba(255,255,255,.4); }
+  .glass-button:hover::after { left: 140%; }
   .metric-investment { background: rgba(254,243,199,.9); }
   .metric-sales { background: rgba(241,245,249,.94); }
   .metric-orders { background: rgba(255,237,213,.9); }
@@ -211,6 +218,8 @@ html.dark .navbar-dropdown { background:rgba(15,23,42,.96);border-color:rgba(56,
   .icon-matrix span { display: grid; place-items: center; height: 18px; width: 18px; border: 1px solid rgba(26,83,92,.16); border-radius: 5px; color: #1A535C; background: rgba(255,255,255,.5); }
   .icon-matrix svg { height: 10px; width: 10px; }
 }
+
+@keyframes workspace-enter { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 /* Translate the existing shared Tailwind surfaces into the architectural glass system. */
 .bg-\[\#0b0f19\], .bg-slate-950, .bg-slate-900, .bg-slate-900\/90, .bg-slate-900\/70, .bg-slate-900\/60,
