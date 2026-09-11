@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import SalesAnalytics from '@/components/SalesAnalytics';
 import SalesHeatmap from '@/components/SalesHeatmap';
@@ -9,6 +10,8 @@ import PendingOrders from '@/components/PendingOrders';
 import ProductManagement from '@/components/ProductManagement';
 import AdminManagement from '@/components/AdminManagement';
 import PdfExportModal from '@/components/PdfExportModal';
+import PressableButton from '@/components/motion/PressableButton';
+import { springGentle } from '@/lib/motion';
 import {
   TrendingUp,
   Calendar,
@@ -122,12 +125,12 @@ export default function BusinessDashboardPage() {
         <p className="text-xs text-slate-400 mt-1 max-w-sm">
           You do not have explicit permissions to view this business workspace. Contact the Super Admin for access.
         </p>
-        <button
+        <PressableButton
           onClick={() => router.push('/dashboard')}
           className="mt-4 px-4 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold"
         >
           Return to Dashboard Overview
-        </button>
+        </PressableButton>
       </div>
     );
   }
@@ -153,13 +156,13 @@ export default function BusinessDashboardPage() {
 
           {/* PDF Export Button (Permission Gated) */}
           {permissions['pdf:export'] && (
-            <button
+            <PressableButton
               onClick={() => setShowPdfModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs shadow-lg shadow-purple-500/20 transition-all hover:scale-105"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs shadow-lg shadow-purple-500/20"
             >
               <FileText className="w-4 h-4" />
               <span>Export Delivery Sheet PDF</span>
-            </button>
+            </PressableButton>
           )}
         </div>
 
@@ -169,26 +172,28 @@ export default function BusinessDashboardPage() {
             <>
               <button
                 onClick={() => setActiveTab('analytics')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                  activeTab === 'analytics'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-md'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+                  activeTab === 'analytics' ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                 }`}
               >
-                <TrendingUp className="w-4 h-4" />
-                <span>Sales Analytics</span>
+                {activeTab === 'analytics' && (
+                  <motion.span layoutId="workspace-tab-pill" transition={springGentle} className="absolute inset-0 rounded-xl border border-emerald-500/40 bg-emerald-500/20 shadow-md" />
+                )}
+                <TrendingUp className="relative z-10 w-4 h-4" />
+                <span className="relative z-10">Sales Analytics</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('heatmap')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                  activeTab === 'heatmap'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-md'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+                  activeTab === 'heatmap' ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                 }`}
               >
-                <Calendar className="w-4 h-4" />
-                <span>Sales Heatmap</span>
+                {activeTab === 'heatmap' && (
+                  <motion.span layoutId="workspace-tab-pill" transition={springGentle} className="absolute inset-0 rounded-xl border border-emerald-500/40 bg-emerald-500/20 shadow-md" />
+                )}
+                <Calendar className="relative z-10 w-4 h-4" />
+                <span className="relative z-10">Sales Heatmap</span>
               </button>
             </>
           )}
@@ -196,69 +201,82 @@ export default function BusinessDashboardPage() {
           {permissions['orders:view'] && (
             <button
               onClick={() => setActiveTab('orders')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                activeTab === 'orders'
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+                activeTab === 'orders' ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              <ShoppingBag className="w-4 h-4" />
-              <span>Order Management</span>
+              {activeTab === 'orders' && (
+                <motion.span layoutId="workspace-tab-pill" transition={springGentle} className="absolute inset-0 rounded-xl border border-emerald-500/40 bg-emerald-500/20 shadow-md" />
+              )}
+              <ShoppingBag className="relative z-10 w-4 h-4" />
+              <span className="relative z-10">Order Management</span>
             </button>
           )}
 
           {permissions['products:manage'] && (
             <button
               onClick={() => setActiveTab('products')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                activeTab === 'products'
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+                activeTab === 'products' ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              <Package className="w-4 h-4" />
-              <span>Products Catalog</span>
+              {activeTab === 'products' && (
+                <motion.span layoutId="workspace-tab-pill" transition={springGentle} className="absolute inset-0 rounded-xl border border-emerald-500/40 bg-emerald-500/20 shadow-md" />
+              )}
+              <Package className="relative z-10 w-4 h-4" />
+              <span className="relative z-10">Products Catalog</span>
             </button>
           )}
 
           {user?.role === 'SUPER_ADMIN' && (
             <button
               onClick={() => setActiveTab('admins')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                activeTab === 'admins'
-                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/40 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+                activeTab === 'admins' ? 'text-purple-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              <Shield className="w-4 h-4 text-purple-400" />
-              <span>Admin Permissions Panel</span>
+              {activeTab === 'admins' && (
+                <motion.span layoutId="workspace-tab-pill" transition={springGentle} className="absolute inset-0 rounded-xl border border-purple-500/40 bg-purple-500/20 shadow-md" />
+              )}
+              <Shield className="relative z-10 w-4 h-4 text-purple-400" />
+              <span className="relative z-10">Admin Permissions Panel</span>
             </button>
           )}
         </div>
 
         {/* Tab Contents */}
         <div className="pt-2">
-          {activeTab === 'analytics' && permissions['sales:view'] && (
-            <SalesAnalytics businessId={currentBusiness.id} investment={currentBusiness.investment} canManageInvestment={!!permissions['investment:manage']} canManageRevenue={!!permissions['revenue:manage']} onInvestmentUpdated={(investment) => setCurrentBusiness((b: any) => ({ ...b, investment }))} />
-          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {activeTab === 'analytics' && permissions['sales:view'] && (
+                <SalesAnalytics businessId={currentBusiness.id} investment={currentBusiness.investment} canManageInvestment={!!permissions['investment:manage']} canManageRevenue={!!permissions['revenue:manage']} onInvestmentUpdated={(investment) => setCurrentBusiness((b: any) => ({ ...b, investment }))} />
+              )}
 
-          {activeTab === 'heatmap' && permissions['sales:view'] && (
-            <SalesHeatmap businessId={currentBusiness.id} />
-          )}
+              {activeTab === 'heatmap' && permissions['sales:view'] && (
+                <SalesHeatmap businessId={currentBusiness.id} />
+              )}
 
-          {activeTab === 'orders' && permissions['orders:view'] && (
-            <PendingOrders
-              businessId={currentBusiness.id}
-              permissions={permissions}
-              onOrderChange={fetchData}
-            />
-          )}
+              {activeTab === 'orders' && permissions['orders:view'] && (
+                <PendingOrders
+                  businessId={currentBusiness.id}
+                  permissions={permissions}
+                  onOrderChange={fetchData}
+                />
+              )}
 
-          {activeTab === 'products' && (
-            <ProductManagement businessId={currentBusiness.id} permissions={permissions} />
-          )}
+              {activeTab === 'products' && (
+                <ProductManagement businessId={currentBusiness.id} permissions={permissions} />
+              )}
 
-          {activeTab === 'admins' && user?.role === 'SUPER_ADMIN' && <AdminManagement />}
+              {activeTab === 'admins' && user?.role === 'SUPER_ADMIN' && <AdminManagement />}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 

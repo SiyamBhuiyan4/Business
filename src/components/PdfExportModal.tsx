@@ -6,6 +6,9 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Modal from '@/components/motion/Modal';
+import PressableButton from '@/components/motion/PressableButton';
+import { useToast } from '@/components/motion/Toast';
 
 interface PdfExportModalProps {
   businessId: string;
@@ -25,8 +28,7 @@ export default function PdfExportModal({
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [orderType, setOrderType] = useState<'ALL' | 'SINGLE' | 'MIXED'>('ALL');
   const [exporting, setExporting] = useState(false);
-
-  if (!isOpen) return null;
+  const toast = useToast();
 
   const handlePresetChange = (preset: 'today' | 'tomorrow' | '7days' | 'custom') => {
     setDatePreset(preset);
@@ -54,7 +56,7 @@ export default function PdfExportModal({
       const json = await res.json();
 
       if (!res.ok || !json.orders || json.orders.length === 0) {
-        alert('No orders found for the selected date range and filter');
+        toast.error('No orders found for the selected date range and filter');
         setExporting(false);
         return;
       }
@@ -147,18 +149,19 @@ export default function PdfExportModal({
 
       // Download PDF
       doc.save(`${businessName.toLowerCase()}_delivery_sheet_${startDate}.pdf`);
+      toast.success('Delivery sheet PDF generated');
       onClose();
     } catch (err) {
       console.error('PDF export error:', err);
-      alert('Failed to generate PDF');
+      toast.error('Failed to generate PDF');
     } finally {
       setExporting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+    <Modal open={isOpen} onClose={onClose} maxWidth="max-w-lg">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
@@ -169,12 +172,12 @@ export default function PdfExportModal({
               <p className="text-xs text-slate-400">Generate printable sheet for delivery personnel</p>
             </div>
           </div>
-          <button
+          <PressableButton
             onClick={onClose}
             className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
           >
             <X className="w-5 h-5" />
-          </button>
+          </PressableButton>
         </div>
 
         <div className="p-6 space-y-5">
@@ -262,22 +265,22 @@ export default function PdfExportModal({
         </div>
 
         <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-end gap-3">
-          <button
+          <PressableButton
             onClick={onClose}
             className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs"
           >
             Cancel
-          </button>
-          <button
+          </PressableButton>
+          <PressableButton
             onClick={handleGeneratePdf}
             disabled={exporting}
             className="flex items-center gap-2 px-5 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs shadow-lg shadow-purple-500/20"
           >
             <Download className="w-4 h-4" />
             {exporting ? 'Generating PDF...' : 'Download PDF Delivery Sheet'}
-          </button>
+          </PressableButton>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
