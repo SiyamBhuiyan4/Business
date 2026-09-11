@@ -1,6 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import Modal from '@/components/motion/Modal';
+import PressableButton from '@/components/motion/PressableButton';
+import { useToast } from '@/components/motion/Toast';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -31,6 +36,7 @@ interface SalesAnalyticsProps {
 const COLORS = ['#10b981', '#f59e0b', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4'];
 
 export default function SalesAnalytics({ businessId, investment = 0, canManageInvestment = false, canManageRevenue = false, onInvestmentUpdated }: SalesAnalyticsProps) {
+  const toast = useToast();
   const [rangePreset, setRangePreset] = useState<'7d' | '30d' | 'custom'>('7d');
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 6), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -53,18 +59,19 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Unable to load admin revenue');
       setRevenueAdmins(json.admins); setRevenueTotal(json.total ?? json.admins.reduce((sum: number, admin: any) => sum + admin.amount, 0));
-    } catch (error: any) { alert(error.message); setShowRevenue(false); } finally { setLoadingRevenue(false); }
+    } catch (error: any) { toast.error(error.message); setShowRevenue(false); } finally { setLoadingRevenue(false); }
   };
 
   const editAdminRevenue = async (admin: any) => {
     const raw = window.prompt(`Revenue held by ${admin.name} (BDT)`, String(admin.amount));
     if (raw === null) return;
     const amount = Number(raw);
-    if (!Number.isFinite(amount)) return alert('Enter a valid amount. Negative values are allowed.');
+    if (!Number.isFinite(amount)) return toast.error('Enter a valid amount. Negative values are allowed.');
     const res = await fetch(`/api/businesses/${businessId}/admin-revenue`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: admin.id, amount }) });
     const json = await res.json();
-    if (!res.ok) return alert(json.error || 'Unable to update admin revenue');
+    if (!res.ok) return toast.error(json.error || 'Unable to update admin revenue');
     setRevenueAdmins((items) => { const next = items.map((item) => item.id === admin.id ? { ...item, amount: json.amount } : item); setRevenueTotal(next.reduce((sum, item) => sum + item.amount, 0)); return next; });
+    toast.success('Admin revenue updated');
   };
 
   const openInvestmentBreakdown = async () => {
@@ -75,19 +82,20 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Unable to load investments');
       setInvestmentAdmins(json.admins); setInvestmentTotal(json.total ?? json.admins.reduce((sum: number, admin: any) => sum + admin.amount, 0));
-    } catch (error: any) { alert(error.message); setShowInvestment(false); } finally { setLoadingInvestment(false); }
+    } catch (error: any) { toast.error(error.message); setShowInvestment(false); } finally { setLoadingInvestment(false); }
   };
 
   const editAdminInvestment = async (admin: any) => {
     const raw = window.prompt(`Investment by ${admin.name} (BDT)`, String(admin.amount));
     if (raw === null) return;
     const amount = Number(raw);
-    if (!Number.isFinite(amount)) return alert('Enter a valid amount. Negative values are allowed.');
+    if (!Number.isFinite(amount)) return toast.error('Enter a valid amount. Negative values are allowed.');
     const res = await fetch(`/api/businesses/${businessId}/admin-investment`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: admin.id, amount }) });
     const json = await res.json();
-    if (!res.ok) return alert(json.error || 'Unable to update investment');
+    if (!res.ok) return toast.error(json.error || 'Unable to update investment');
     setInvestmentAdmins((items) => items.map((item) => item.id === admin.id ? { ...item, amount: json.amount } : item));
     setInvestmentTotal(json.total); onInvestmentUpdated?.(json.total);
+    toast.success('Admin investment updated');
   };
 
   const fetchAnalytics = async () => {
@@ -261,33 +269,29 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
         </div></TiltCard>
       </div>
 
-      {showInvestment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" onClick={() => setShowInvestment(false)}>
-          <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-800 p-5"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400"><Wallet className="h-5 w-5" /></div><div><h3 className="font-bold text-white">Admin Investment Breakdown</h3><p className="text-xs text-slate-400">Investment contributed by each assigned admin</p></div></div><button onClick={() => setShowInvestment(false)} title="Close" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"><X className="h-5 w-5" /></button></div>
-            <div className="max-h-[60vh] space-y-2 overflow-y-auto p-5">{loadingInvestment ? <div className="py-10 text-center text-sm text-slate-400">Loading investments...</div> : investmentAdmins.length === 0 ? <div className="py-10 text-center text-sm text-slate-400">No admins are assigned to this business.</div> : investmentAdmins.map((admin) => <div key={admin.id} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4"><div className="min-w-0"><div className="truncate text-sm font-bold text-slate-100">{admin.name}</div><div className="truncate text-xs text-slate-500">@{admin.username || admin.email}</div></div><div className="ml-4 flex items-center gap-2"><span className={`text-lg font-extrabold ${admin.amount < 0 ? 'text-rose-400' : 'text-cyan-400'}`}>{formatCurrency(admin.amount)}</span>{canManageInvestment && <button onClick={() => editAdminInvestment(admin)} title="Edit admin investment" className="rounded-lg p-2 text-cyan-300 hover:bg-cyan-500/15"><Pencil className="h-4 w-4" /></button>}</div></div>)}</div>
-          </div>
+      <Modal open={showInvestment} onClose={() => setShowInvestment(false)} maxWidth="max-w-xl">
+        <div className="w-full overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+          <div className="flex items-center justify-between border-b border-slate-800 p-5"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400"><Wallet className="h-5 w-5" /></div><div><h3 className="font-bold text-white">Admin Investment Breakdown</h3><p className="text-xs text-slate-400">Investment contributed by each assigned admin</p></div></div><PressableButton onClick={() => setShowInvestment(false)} title="Close" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"><X className="h-5 w-5" /></PressableButton></div>
+          <motion.div className="max-h-[60vh] space-y-2 overflow-y-auto p-5" variants={staggerContainer} initial="hidden" animate="visible">{loadingInvestment ? <div className="py-10 text-center text-sm text-slate-400">Loading investments...</div> : investmentAdmins.length === 0 ? <div className="py-10 text-center text-sm text-slate-400">No admins are assigned to this business.</div> : investmentAdmins.map((admin) => <motion.div key={admin.id} variants={staggerItem} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4"><div className="min-w-0"><div className="truncate text-sm font-bold text-slate-100">{admin.name}</div><div className="truncate text-xs text-slate-500">@{admin.username || admin.email}</div></div><div className="ml-4 flex items-center gap-2"><span className={`text-lg font-extrabold ${admin.amount < 0 ? 'text-rose-400' : 'text-cyan-400'}`}>{formatCurrency(admin.amount)}</span>{canManageInvestment && <PressableButton onClick={() => editAdminInvestment(admin)} title="Edit admin investment" className="rounded-lg p-2 text-cyan-300 hover:bg-cyan-500/15"><Pencil className="h-4 w-4" /></PressableButton>}</div></motion.div>)}</motion.div>
         </div>
-      )}
+      </Modal>
 
-      {showRevenue && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" onClick={() => setShowRevenue(false)}>
-          <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-800 p-5">
-              <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400"><Users className="h-5 w-5" /></div><div><h3 className="font-bold text-white">Admin Revenue Breakdown</h3><p className="text-xs text-slate-400">Revenue currently held by each assigned admin</p></div></div>
-              <button onClick={() => setShowRevenue(false)} title="Close" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="max-h-[60vh] space-y-2 overflow-y-auto p-5">
-              {loadingRevenue ? <div className="py-10 text-center text-sm text-slate-400">Loading admin revenue...</div> : revenueAdmins.length === 0 ? <div className="py-10 text-center text-sm text-slate-400">No admins are assigned to this business.</div> : revenueAdmins.map((admin) => (
-                <div key={admin.id} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-                  <div className="min-w-0"><div className="truncate text-sm font-bold text-slate-100">{admin.name}</div><div className="truncate text-xs text-slate-500">@{admin.username || admin.email}</div></div>
-                  <div className="ml-4 flex items-center gap-2"><span className={`text-lg font-extrabold ${admin.amount < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{formatCurrency(admin.amount)}</span>{canManageRevenue && <button onClick={() => editAdminRevenue(admin)} title="Edit admin revenue" className="rounded-lg p-2 text-cyan-300 hover:bg-cyan-500/15"><Pencil className="h-4 w-4" /></button>}</div>
-                </div>
-              ))}
-            </div>
+      <Modal open={showRevenue} onClose={() => setShowRevenue(false)} maxWidth="max-w-xl">
+        <div className="w-full overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+          <div className="flex items-center justify-between border-b border-slate-800 p-5">
+            <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400"><Users className="h-5 w-5" /></div><div><h3 className="font-bold text-white">Admin Revenue Breakdown</h3><p className="text-xs text-slate-400">Revenue currently held by each assigned admin</p></div></div>
+            <PressableButton onClick={() => setShowRevenue(false)} title="Close" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"><X className="h-5 w-5" /></PressableButton>
           </div>
+          <motion.div className="max-h-[60vh] space-y-2 overflow-y-auto p-5" variants={staggerContainer} initial="hidden" animate="visible">
+            {loadingRevenue ? <div className="py-10 text-center text-sm text-slate-400">Loading admin revenue...</div> : revenueAdmins.length === 0 ? <div className="py-10 text-center text-sm text-slate-400">No admins are assigned to this business.</div> : revenueAdmins.map((admin) => (
+              <motion.div key={admin.id} variants={staggerItem} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="min-w-0"><div className="truncate text-sm font-bold text-slate-100">{admin.name}</div><div className="truncate text-xs text-slate-500">@{admin.username || admin.email}</div></div>
+                <div className="ml-4 flex items-center gap-2"><span className={`text-lg font-extrabold ${admin.amount < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{formatCurrency(admin.amount)}</span>{canManageRevenue && <PressableButton onClick={() => editAdminRevenue(admin)} title="Edit admin revenue" className="rounded-lg p-2 text-cyan-300 hover:bg-cyan-500/15"><Pencil className="h-4 w-4" /></PressableButton>}</div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
-      )}
+      </Modal>
 
       {/* Main Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

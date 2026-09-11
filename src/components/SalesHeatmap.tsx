@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Flame, Calendar as CalendarIcon, X, Eye, PackageCheck, Info } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import Modal from '@/components/motion/Modal';
+import PressableButton from '@/components/motion/PressableButton';
+import { springSnappy, staggerContainer, staggerItem } from '@/lib/motion';
 
 interface SalesHeatmapProps {
   businessId: string;
@@ -100,7 +104,12 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
         {loading ? (
           <div className="py-16 text-center text-slate-500 text-sm">Loading calendar heatmap...</div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3">
+          <motion.div
+            className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {heatmapData.map((day) => {
               const parsedDate = parseISO(day.date);
               const dayNum = format(parsedDate, 'd');
@@ -108,10 +117,13 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
               const dayOfWeek = format(parsedDate, 'EEE');
 
               return (
-                <button
+                <motion.button
                   key={day.date}
                   onClick={() => handleDayClick(day)}
-                  className={`relative flex flex-col justify-between p-3.5 rounded-xl border transition-all duration-150 group hover:scale-[1.03] hover:z-10 ${getShadingClass(
+                  variants={staggerItem}
+                  whileHover={{ scale: 1.03, zIndex: 10 }}
+                  transition={springSnappy}
+                  className={`relative flex flex-col justify-between p-3.5 rounded-xl border group ${getShadingClass(
                     day.orderCount
                   )}`}
                 >
@@ -140,17 +152,17 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
                       {formatCurrency(day.revenue)}
                     </div>
                   </div>
-                </button>
+                </motion.button>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </div>
 
       {/* Date Orders Detail Modal */}
-      {selectedDay && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+      <Modal open={!!selectedDay} onClose={() => setSelectedDay(null)} maxWidth="max-w-2xl">
+        {selectedDay && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
               <div className="flex items-center gap-3">
@@ -167,12 +179,12 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
                 </div>
               </div>
 
-              <button
+              <PressableButton
                 onClick={() => setSelectedDay(null)}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </PressableButton>
             </div>
 
             {/* Modal Content */}
@@ -234,16 +246,16 @@ export default function SalesHeatmap({ businessId }: SalesHeatmapProps) {
 
             {/* Modal Footer */}
             <div className="px-6 py-3 border-t border-slate-800 bg-slate-900/60 text-right">
-              <button
+              <PressableButton
                 onClick={() => setSelectedDay(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs"
               >
                 Close
-              </button>
+              </PressableButton>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }
