@@ -33,7 +33,7 @@ export async function ensureSuperAdmin() {
   if (!password) return null;
   return prisma.user.create({
     data: {
-      name: 'Super Admin (Owner)',
+      name: 'Super Admin',
       username,
       email: username,
       passwordHash: await hashPassword(password),

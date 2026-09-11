@@ -267,15 +267,26 @@ export default function FruitNinjaGame() {
         )}
       </AnimatePresence>
 
-      {/* ON/OFF toggle - subtle, bottom-left */}
+      {/* ON/OFF toggle - large and clearly visible, bottom-left on every page */}
       <button
         data-game-ui
         onClick={toggle}
         title={enabled ? 'Turn off background slicing' : 'Turn on background slicing'}
-        className="pointer-events-auto fixed bottom-4 left-4 z-[2] flex items-center gap-1.5 rounded-2xl bg-black/30 px-3 py-1.5 text-[10px] font-bold text-white/70 backdrop-blur-sm hover:text-white"
+        className={`pointer-events-auto fixed bottom-4 left-4 z-[2] flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold shadow-lg backdrop-blur-md transition-colors ${
+          enabled
+            ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30'
+            : 'border-rose-400/50 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30'
+        }`}
       >
-        <span>{'\u{1F344}'}</span>
-        <span>{enabled ? 'ON' : 'OFF'}</span>
+        <span className="text-base leading-none">{'\u{1F344}'}</span>
+        <span className="hidden sm:inline">Mushroom Game</span>
+        <span
+          className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${enabled ? 'bg-emerald-400' : 'bg-rose-400/70'}`}
+        >
+          <span
+            className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+          />
+        </span>
       </button>
 
       {/* Extends every page's scrollable height so there's always open, card-free

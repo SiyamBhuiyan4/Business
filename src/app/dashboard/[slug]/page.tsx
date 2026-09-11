@@ -148,9 +148,6 @@ export default function BusinessDashboardPage() {
             </div>
             <div>
               <h1 className="text-2xl font-black text-white">{currentBusiness.name}</h1>
-              <p className="text-xs text-slate-400">
-                Workspace ID: <span className="font-mono text-emerald-400">{currentBusiness.id.slice(0, 8)}</span>
-              </p>
             </div>
           </div>
 

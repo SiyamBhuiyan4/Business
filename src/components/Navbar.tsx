@@ -145,7 +145,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
           <div className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/45 px-2 py-1.5 sm:px-3">
             <span className="navbar-avatar flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black text-white">{user?.role === 'SUPER_ADMIN' ? 'SA' : 'A'}</span>
             <div className="text-left hidden sm:block">
-              <div className="navbar-user-name text-xs font-semibold">{user?.name} {user?.role === 'SUPER_ADMIN' && <span className="navbar-owner">(Owner)</span>}</div>
+              <div className="navbar-user-name text-xs font-semibold">{user?.name?.replace(/\s*\(Owner\)\s*$/i, '')} {user?.role === 'SUPER_ADMIN' && <span className="navbar-owner">(Owner)</span>}</div>
               <div className="navbar-user-role text-[10px] font-mono uppercase tracking-wider">
                 {user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
               </div>
