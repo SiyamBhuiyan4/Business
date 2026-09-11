@@ -18,6 +18,16 @@ export const FRUITS: FruitDef[] = [
   { key: 'amanita', emoji: '\u{1F344}', color: 0xd7263d, points: 25, radius: 44, spritePath: '/game-assets/fruits/amanita.png' },
 ];
 
+/** Slicing this ends the run instantly. */
+export const BOMB: FruitDef = {
+  key: 'bomb',
+  emoji: '\u{1F4A3}',
+  color: 0x1a1a1a,
+  points: 0,
+  radius: 40,
+  spritePath: '/game-assets/fruits/bomb.png',
+};
+
 export function randomFruit(): FruitDef {
   return FRUITS[Math.floor(Math.random() * FRUITS.length)];
 }

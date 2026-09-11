@@ -1,9 +1,16 @@
 import type * as PIXI_NS from 'pixi.js';
-import { FRUITS, randomFruit, type FruitDef } from './gameAssets';
+import { BOMB, FRUITS, randomFruit, type FruitDef } from './gameAssets';
+
+export type GameOverReason = 'bomb' | 'timeout';
 
 export interface FruitGameCallbacks {
   onScoreChange: (score: number) => void;
   onMultiplierChange: (multiplier: number, combo: number) => void;
+  /** Fires exactly once, on the very first successful slice. */
+  onActivate: () => void;
+  onGameOver: (finalScore: number, reason: GameOverReason) => void;
+  /** Fires roughly once a second while ACTIVE, for a UI countdown display. */
+  onCountdownTick: (secondsLeft: number) => void;
 }
 
 interface TrailPoint {
@@ -18,6 +25,7 @@ interface ActiveFruit {
   vx: number;
   vy: number;
   radius: number;
+  isBomb: boolean;
   sliced: boolean;
   rotationSpeed: number;
 }
@@ -32,10 +40,15 @@ interface Particle {
   expands?: boolean;
 }
 
+type GameState = 'idle' | 'active' | 'gameover';
+
 const GRAVITY = 0.32;
 const COMBO_WINDOW_MS = 1100;
 const MAX_MULTIPLIER = 12;
 const TRAIL_MAX_AGE_MS = 160;
+const IDLE_TIMEOUT_MS = 20000;
+const BOMB_CHANCE = 0.18;
+const MOVE_STALE_MS = 120;
 
 export class FruitSliceEngine {
   private PIXI: typeof PIXI_NS;
@@ -50,23 +63,22 @@ export class FruitSliceEngine {
   private fruits: ActiveFruit[] = [];
   private particles: Particle[] = [];
   private trail: TrailPoint[] = [];
-  private pointerDown = false;
-  private lastPoint: { x: number; y: number } | null = null;
+  private lastPoint: { x: number; y: number; t: number } | null = null;
   private exclusionRects: DOMRect[] = [];
 
+  private state: GameState = 'idle';
   private score = 0;
   private combo = 0;
   private comboTimer = 0;
   private multiplier = 1;
+  private lastSliceTime = 0;
+  private lastCountdownSecond = -1;
 
   private spawnTimer = 0;
-  private spawnInterval = 950;
-  private elapsedMs = 0;
+  private spawnInterval = 1000;
   private destroyed = false;
 
-  private onDown: (e: PointerEvent) => void;
-  private onMove: (e: PointerEvent) => void;
-  private onUp: (e: PointerEvent) => void;
+  private onPointerMove: (e: PointerEvent) => void;
 
   constructor(container: HTMLElement, PIXI: typeof PIXI_NS, callbacks: FruitGameCallbacks) {
     this.PIXI = PIXI;
@@ -89,17 +101,12 @@ export class FruitSliceEngine {
 
     this.app.stage.addChild(this.fruitLayer, this.particleLayer, this.trailGlow, this.trailGraphics);
 
-    const handlers = this.createPointerHandlers();
-    this.onDown = handlers.onDown;
-    this.onMove = handlers.onMove;
-    this.onUp = handlers.onUp;
-    // Listen on window (not the canvas) so slicing correctly stops the instant the
-    // pointer crosses into a real UI element sitting visually above the canvas,
-    // and cleanly resumes once it re-enters empty background space.
-    window.addEventListener('pointerdown', this.onDown, { passive: true });
-    window.addEventListener('pointermove', this.onMove, { passive: true });
-    window.addEventListener('pointerup', this.onUp, { passive: true });
-    window.addEventListener('pointercancel', this.onUp, { passive: true });
+    this.onPointerMove = this.handlePointerMove.bind(this);
+    // Hover-only controls: no mousedown/press required at all, matches trackpad
+    // swipe/hover expectations. Listens on window so it works regardless of
+    // z-index stacking, and so it correctly stops the instant the pointer is
+    // over real UI (see isExcluded) without needing pointer capture.
+    window.addEventListener('pointermove', this.onPointerMove, { passive: true });
 
     this.app.ticker.add(this.update);
   }
@@ -108,6 +115,24 @@ export class FruitSliceEngine {
     this.callbacks.onScoreChange(this.score);
     this.callbacks.onMultiplierChange(this.multiplier, this.combo);
     void this.preloadTextures();
+  }
+
+  /** Fully resets for "Play Again": back to idle, waiting for the next first slice. */
+  reset() {
+    for (const f of this.fruits) { this.fruitLayer.removeChild(f.view); f.view.destroy({ children: true }); }
+    for (const p of this.particles) { this.particleLayer.removeChild(p.view); p.view.destroy({ children: true }); }
+    this.fruits = [];
+    this.particles = [];
+    this.trail = [];
+    this.lastPoint = null;
+    this.state = 'idle';
+    this.score = 0;
+    this.combo = 0;
+    this.comboTimer = 0;
+    this.multiplier = 1;
+    this.lastCountdownSecond = -1;
+    this.callbacks.onScoreChange(this.score);
+    this.callbacks.onMultiplierChange(this.multiplier, this.combo);
   }
 
   /** Called by the host component whenever real UI element positions change (mount, resize, scroll, DOM updates). */
@@ -125,7 +150,7 @@ export class FruitSliceEngine {
   /** Loads any real sprite art dropped into public/game-assets/fruits/. Missing files are skipped silently -- those fruits keep using the emoji + color-circle placeholder. */
   private async preloadTextures() {
     await Promise.all(
-      FRUITS.map(async (def) => {
+      [...FRUITS, BOMB].map(async (def) => {
         try {
           const head = await fetch(def.spritePath, { method: 'HEAD' });
           if (!head.ok) return;
@@ -140,39 +165,28 @@ export class FruitSliceEngine {
 
   destroy() {
     this.destroyed = true;
-    window.removeEventListener('pointerdown', this.onDown);
-    window.removeEventListener('pointermove', this.onMove);
-    window.removeEventListener('pointerup', this.onUp);
-    window.removeEventListener('pointercancel', this.onUp);
+    window.removeEventListener('pointermove', this.onPointerMove);
     this.app.ticker.remove(this.update);
     this.app.destroy(true, { children: true, texture: true, baseTexture: true });
   }
 
-  private createPointerHandlers() {
-    const onDown = (e: PointerEvent) => {
-      if (this.isExcluded(e.clientX, e.clientY)) return; // started on real UI -- ignore this gesture entirely
-      this.pointerDown = true;
-      this.lastPoint = { x: e.clientX, y: e.clientY };
-      this.trail.push({ x: e.clientX, y: e.clientY, t: performance.now() });
-    };
-    const onMove = (e: PointerEvent) => {
-      if (!this.pointerDown) return;
-      const p = { x: e.clientX, y: e.clientY };
-      if (this.isExcluded(p.x, p.y)) {
-        // Over a real UI element: break the trail so it never draws across cards,
-        // and skip slice detection there entirely.
-        this.lastPoint = null;
-        return;
-      }
-      if (this.lastPoint) this.checkSliceAlongSegment(this.lastPoint, p);
-      this.lastPoint = p;
-      this.trail.push({ ...p, t: performance.now() });
-    };
-    const onUp = () => {
-      this.pointerDown = false;
+  private handlePointerMove(e: PointerEvent) {
+    if (this.state === 'gameover') return;
+    const now = performance.now();
+    const p = { x: e.clientX, y: e.clientY, t: now };
+
+    if (this.isExcluded(p.x, p.y)) {
+      // Over real UI: break the trail so it never draws across cards, skip slicing.
       this.lastPoint = null;
-    };
-    return { onDown, onMove, onUp };
+      return;
+    }
+
+    // If the pointer was stationary/away too long (or just entered open space),
+    // don't connect this point to a stale one -- avoids a false long slice segment.
+    const prev = this.lastPoint && now - this.lastPoint.t < MOVE_STALE_MS ? this.lastPoint : null;
+    if (prev) this.checkSliceAlongSegment(prev, p);
+    this.lastPoint = p;
+    this.trail.push(p);
   }
 
   private checkSliceAlongSegment(a: { x: number; y: number }, b: { x: number; y: number }) {
@@ -188,13 +202,41 @@ export class FruitSliceEngine {
   private spawnFruit() {
     const w = this.app.renderer.width / this.app.renderer.resolution;
     const h = this.app.renderer.height / this.app.renderer.resolution;
-    const def = randomFruit();
+    const isBomb = Math.random() < BOMB_CHANCE;
+    const def = isBomb ? BOMB : randomFruit();
 
-    // Classic upward toss from the bottom edge, arcing back down under gravity.
-    const x = w * (0.1 + Math.random() * 0.8);
-    const y = h + def.radius + 50;
-    const vx = (Math.random() - 0.5) * 5;
-    const vy = -(9 + Math.random() * 4);
+    const dir = Math.floor(Math.random() * 3); // 0 bottom, 1 left, 2 right
+    let x = 0, y = 0, vx = 0, vy = 0;
+
+    // Trajectories are derived from real projectile physics (vy = -sqrt(2*g*travel))
+    // so the apex height is precise and adapts to the actual viewport size, rather
+    // than a fixed speed guess that would arc too low on tall screens.
+    if (dir === 0) {
+      x = w * (0.1 + Math.random() * 0.8);
+      y = h + 40 + def.radius;
+      // Apex reaches 80-85% of the screen's height up from the bottom edge.
+      const apexY = h * (0.15 + Math.random() * 0.05);
+      const travel = y - apexY;
+      vx = (Math.random() - 0.5) * 5;
+      vy = -Math.sqrt(2 * GRAVITY * travel);
+    } else {
+      const spawnY = h * (0.55 + Math.random() * 0.35);
+      // Apex reaches into the upper-middle band of the screen.
+      const apexY = h * (0.15 + Math.random() * 0.25);
+      const travel = Math.max(60, spawnY - apexY);
+      const vyMag = Math.sqrt(2 * GRAVITY * travel);
+      const vxMag = 6 + Math.random() * 3;
+      if (dir === 1) {
+        x = -40 - def.radius;
+        y = spawnY;
+        vx = vxMag;
+      } else {
+        x = w + 40 + def.radius;
+        y = spawnY;
+        vx = -vxMag;
+      }
+      vy = -vyMag;
+    }
 
     const view = this.createFruitVisual(def);
     view.x = x;
@@ -207,12 +249,14 @@ export class FruitSliceEngine {
       vx,
       vy,
       radius: def.radius,
+      isBomb,
       sliced: false,
       rotationSpeed: (Math.random() - 0.5) * 0.15,
     });
   }
 
   private sliceFruit(fruit: ActiveFruit) {
+    if (this.state === 'gameover') return;
     fruit.sliced = true;
     // Capture position before destroying the view -- PIXI nulls a destroyed
     // DisplayObject's internal transform, so reading .x/.y after destroy() throws.
@@ -221,6 +265,19 @@ export class FruitSliceEngine {
     this.fruitLayer.removeChild(fruit.view);
     fruit.view.destroy({ children: true });
     this.fruits = this.fruits.filter((f) => f !== fruit);
+
+    if (fruit.isBomb) {
+      this.spawnParticleBurst(x, y, 0xff5555, 24);
+      this.endGame('bomb');
+      return;
+    }
+
+    const wasIdle = this.state === 'idle';
+    if (wasIdle) {
+      this.state = 'active';
+      this.callbacks.onActivate();
+    }
+    this.lastSliceTime = Date.now();
 
     this.combo += 1;
     this.comboTimer = COMBO_WINDOW_MS;
@@ -232,6 +289,12 @@ export class FruitSliceEngine {
     this.spawnHalves(fruit, x, y);
     this.spawnParticleBurst(x, y, fruit.def.color, 14);
     this.spawnSporeCloud(x, y);
+  }
+
+  private endGame(reason: GameOverReason) {
+    if (this.state === 'gameover') return;
+    this.state = 'gameover';
+    this.callbacks.onGameOver(this.score, reason);
   }
 
   /** Soft, slow-expanding puffs to sell the "spores releasing" moment on a mushroom slice. */
@@ -303,26 +366,41 @@ export class FruitSliceEngine {
     if (this.destroyed) return;
     const dt = delta; // pixi ticker delta ~1 at 60fps
     const dtMs = this.app.ticker.deltaMS;
-    this.elapsedMs += dtMs;
 
     const w = this.app.renderer.width / this.app.renderer.resolution;
     const h = this.app.renderer.height / this.app.renderer.resolution;
 
-    // spawn logic, ramps up slowly
-    this.spawnTimer += dtMs;
-    const difficultyFactor = Math.max(0.55, 1 - this.elapsedMs / 120000);
-    if (this.spawnTimer >= this.spawnInterval * difficultyFactor) {
-      this.spawnTimer = 0;
-      this.spawnFruit();
+    if (this.state !== 'gameover') {
+      // spawn logic: rapid waves every 0.8-1.2s
+      this.spawnTimer += dtMs;
+      if (this.spawnTimer >= this.spawnInterval) {
+        this.spawnTimer = 0;
+        this.spawnInterval = 800 + Math.random() * 400;
+        this.spawnFruit();
+        if (Math.random() < 0.3) this.spawnFruit();
+      }
+
+      // combo decay
+      if (this.comboTimer > 0) {
+        this.comboTimer -= dtMs;
+        if (this.comboTimer <= 0) {
+          this.combo = 0;
+          this.multiplier = 1;
+          this.callbacks.onMultiplierChange(this.multiplier, this.combo);
+        }
+      }
     }
 
-    // combo decay
-    if (this.comboTimer > 0) {
-      this.comboTimer -= dtMs;
-      if (this.comboTimer <= 0) {
-        this.combo = 0;
-        this.multiplier = 1;
-        this.callbacks.onMultiplierChange(this.multiplier, this.combo);
+    // 20s inactivity timeout, only once the run is actually active
+    if (this.state === 'active') {
+      const elapsedMs = Date.now() - this.lastSliceTime;
+      const secondsLeft = Math.max(0, Math.ceil((IDLE_TIMEOUT_MS - elapsedMs) / 1000));
+      if (secondsLeft !== this.lastCountdownSecond) {
+        this.lastCountdownSecond = secondsLeft;
+        this.callbacks.onCountdownTick(secondsLeft);
+      }
+      if (elapsedMs > IDLE_TIMEOUT_MS) {
+        this.endGame('timeout');
       }
     }
 
