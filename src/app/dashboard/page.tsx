@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import {
   Store,
@@ -18,8 +19,13 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { InvestmentMetric, NetworkGlobe, OrdersMetric, ProductsMetric, SalesMetric } from '@/components/MetricVisuals';
+import Modal from '@/components/motion/Modal';
+import PressableButton from '@/components/motion/PressableButton';
+import { useToast } from '@/components/motion/Toast';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 
 export default function DashboardOverviewPage() {
+  const toast = useToast();
   const [user, setUser] = useState<any>(null);
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,12 +88,14 @@ export default function DashboardOverviewPage() {
         setBizName('');
         setInitialProducts([{ name: '', unitPrice: '', sku: '' }]);
         fetchData();
+        toast.success('Business workspace created');
       } else {
         const json = await res.json();
-        alert(json.error || 'Failed to create business');
+        toast.error(json.error || 'Failed to create business');
       }
     } catch (err) {
       console.error('Failed to create business:', err);
+      toast.error('Failed to create business');
     } finally {
       setSubmitting(false);
     }
@@ -100,20 +108,20 @@ export default function DashboardOverviewPage() {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: name.trim(), color: biz.color, icon: biz.icon }),
     });
-    if (res.ok) fetchData(); else alert((await res.json()).error || 'Failed to edit business');
+    if (res.ok) { fetchData(); toast.success('Business renamed'); } else toast.error((await res.json()).error || 'Failed to edit business');
   };
 
   const handleInvestment = async (biz: any) => {
     const value = window.prompt('Set investment amount (৳)', String(biz.investment || 0));
     if (value === null || !Number.isFinite(Number(value)) || Number(value) < 0) return;
     const res = await fetch(`/api/businesses/${biz.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: biz.name, icon: biz.icon, color: biz.color, investment: Number(value) }) });
-    if (res.ok) { const json = await res.json(); setBusinesses((prev) => prev.map((item) => item.id === biz.id ? { ...item, investment: json.business.investment } : item)); }
+    if (res.ok) { const json = await res.json(); setBusinesses((prev) => prev.map((item) => item.id === biz.id ? { ...item, investment: json.business.investment } : item)); toast.success('Investment updated'); } else toast.error((await res.json()).error || 'Failed to update investment');
   };
 
   const handleDeleteBusiness = async (biz: any) => {
     if (!window.confirm(`Delete ${biz.name} and all of its products, orders, and access records? This cannot be undone.`)) return;
     const res = await fetch(`/api/businesses/${biz.id}`, { method: 'DELETE' });
-    if (res.ok) fetchData(); else alert((await res.json()).error || 'Failed to delete business');
+    if (res.ok) { fetchData(); toast.success('Business deleted'); } else toast.error((await res.json()).error || 'Failed to delete business');
   };
 
   return (
@@ -142,13 +150,13 @@ export default function DashboardOverviewPage() {
           </div>
 
           {user?.role === 'SUPER_ADMIN' && (
-            <button
+            <PressableButton
               onClick={() => setShowCreateModal(true)}
               className="glass-button relative z-10 flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-xs font-extrabold"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               Create New Business Workspace
-            </button>
+            </PressableButton>
           )}
         </div>
 
@@ -164,12 +172,19 @@ export default function DashboardOverviewPage() {
           {loading ? (
             <div className="py-16 text-center text-slate-500 text-sm">Loading workspaces...</div>
           ) : businesses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {businesses.map((biz, index) => (
-                <div
+            <motion.div
+              className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+            >
+              {businesses.map((biz) => (
+                <motion.div
                   key={biz.id}
-                  style={{ '--stagger': `${index * 75}ms` } as React.CSSProperties}
-                  className="glass-panel workspace-card group flex flex-col justify-between rounded-3xl p-5 transition-all hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(74,61,50,.14)] sm:p-6"
+                  variants={staggerItem}
+                  whileHover={{ y: -6 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+                  className="glass-panel group flex flex-col justify-between rounded-3xl p-5 hover:shadow-[0_22px_55px_rgba(74,61,50,.14)] sm:p-6"
                 >
                   <div className="space-y-5">
                     {/* Header */}
@@ -213,9 +228,9 @@ export default function DashboardOverviewPage() {
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           ) : (
             <div className="bg-slate-900 border border-slate-800 rounded-3xl py-16 text-center text-slate-500">
               No business workspaces accessible. Contact Super Admin for access.
@@ -225,17 +240,16 @@ export default function DashboardOverviewPage() {
       </main>
 
       {/* Create New Business Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} className="max-h-[90vh]">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
               <h3 className="text-base font-bold text-slate-100">Create New Business Workspace</h3>
-              <button
+              <PressableButton
                 onClick={() => setShowCreateModal(false)}
                 className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </PressableButton>
             </div>
 
             <form onSubmit={handleCreateBusiness} className="p-6 space-y-4 overflow-y-auto flex-1">
@@ -293,25 +307,24 @@ export default function DashboardOverviewPage() {
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
-                <button
+                <PressableButton
                   type="button"
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
                 >
                   Cancel
-                </button>
-                <button
+                </PressableButton>
+                <PressableButton
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20"
                 >
                   {submitting ? 'Creating...' : 'Create Business'}
-                </button>
+                </PressableButton>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
