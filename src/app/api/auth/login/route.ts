@@ -18,8 +18,11 @@ export async function POST(request: Request) {
       where: { OR: [{ email: identifier }, { username: identifier }] },
     });
 
-    if (!user || !user.active) {
+    if (!user) {
       return NextResponse.json({ error: 'Invalid username/email or password' }, { status: 401 });
+    }
+    if (!user.active) {
+      return NextResponse.json({ error: 'This account has been deactivated. Contact the Super Admin to reactivate it.' }, { status: 403 });
     }
 
     const isValid = await comparePassword(password, user.passwordHash);
