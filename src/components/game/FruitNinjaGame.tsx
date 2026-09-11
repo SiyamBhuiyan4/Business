@@ -267,12 +267,13 @@ export default function FruitNinjaGame() {
         )}
       </AnimatePresence>
 
-      {/* ON/OFF toggle - large and clearly visible, bottom-left on every page */}
+      {/* ON/OFF toggle - top-right on every page, just under the sticky navbar so it
+          never fights the navbar's own buttons for the same pixels. */}
       <button
         data-game-ui
         onClick={toggle}
         title={enabled ? 'Turn off background slicing' : 'Turn on background slicing'}
-        className={`pointer-events-auto fixed bottom-4 left-4 z-[2] flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold shadow-lg backdrop-blur-md transition-colors ${
+        className={`pointer-events-auto fixed top-20 right-4 z-20 flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold shadow-lg backdrop-blur-md transition-colors ${
           enabled
             ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30'
             : 'border-rose-400/50 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30'
