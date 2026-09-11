@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Shield, Plus, Check, X, UserPlus, ToggleLeft, ToggleRight, Building, Key, Mail, CalendarDays, Trash2, Pencil, UserCheck, UserX, Eye, EyeOff } from 'lucide-react';
+import { Shield, Plus, Check, X, UserPlus, ToggleLeft, ToggleRight, Building, Key, Mail, CalendarDays, Trash2, Pencil, UserCheck, UserX, Eye, EyeOff, Copy, Wand2, PartyPopper } from 'lucide-react';
 import { PERMISSION_LIST } from '@/lib/permissions';
 import Modal from '@/components/motion/Modal';
 import PressableButton from '@/components/motion/PressableButton';
 import { useToast } from '@/components/motion/Toast';
 import { slideFromRight, springSnappy, staggerContainer, staggerItem } from '@/lib/motion';
+import { copyToClipboard, generateStrongPassword } from '@/lib/password';
 
 export default function AdminManagement() {
   const toast = useToast();
@@ -38,6 +39,13 @@ export default function AdminManagement() {
   const [adminQuery, setAdminQuery] = useState('');
   const [createError, setCreateError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [justCreated, setJustCreated] = useState<{ username: string; password: string } | null>(null);
+
+  const copyText = async (label: string, text: string) => {
+    const ok = await copyToClipboard(text);
+    if (ok) toast.success(`${label} copied to clipboard`);
+    else toast.error(`Could not copy ${label.toLowerCase()}`);
+  };
   const loginAs = async (admin: any) => { const res = await fetch('/api/admin/impersonate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: admin.id }) }); if (res.ok) window.location.href = '/admin/dashboard'; else toast.error((await res.json()).error || 'Unable to log in as admin'); };
 
   const fetchData = async () => {
@@ -179,7 +187,7 @@ export default function AdminManagement() {
 
       if (res.ok) {
         setCreateError('');
-        setShowCreateModal(false);
+        setJustCreated({ username: normalizedUsername, password: password.trim() });
         setName('');
         setEmail('');
         setUsername('');
@@ -316,33 +324,89 @@ export default function AdminManagement() {
               </PressableButton>
             </div>
 
+            <AnimatePresence initial={false}>
             {editMode && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
               <div className="mt-4 space-y-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 p-4">
-                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">Username<input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} autoComplete="username" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" /></label>
-                <div className="grid gap-3 sm:grid-cols-2"><label className="space-y-1.5 text-sm font-semibold text-slate-300">Current password <span className="font-normal text-slate-500">(optional)</span><span className="relative block"><input type={showCurrentPassword ? 'text' : 'password'} autoComplete="current-password" value={editCurrentPassword} onChange={(e) => setEditCurrentPassword(e.target.value)} placeholder="Enter to verify" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 pr-11 text-white outline-none placeholder:text-slate-600 focus:border-purple-400" /><button type="button" onClick={() => setShowCurrentPassword((value) => !value)} title={showCurrentPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></span></label><label className="space-y-1.5 text-sm font-semibold text-slate-300">New password <span className="font-normal text-slate-500">(optional)</span><span className="relative block"><input type={showEditPassword ? 'text' : 'password'} autoComplete="new-password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Leave unchanged" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 pr-11 text-white outline-none placeholder:text-slate-600 focus:border-purple-400" /><button type="button" onClick={() => setShowEditPassword((value) => !value)} title={showEditPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></span></label></div>
-                <button type="button" onClick={() => updateAdmin()} disabled={!editUsername.trim()} className="w-full rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-black text-slate-950 hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50">Save Changes</button>
+                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">
+                  Username
+                  <span className="flex items-center gap-2">
+                    <input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} autoComplete="username" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" />
+                    <PressableButton type="button" onClick={() => editUsername && copyText('Username', editUsername)} title="Copy username" className="shrink-0 rounded-xl bg-slate-800 p-2.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+                      <Copy className="h-4 w-4" />
+                    </PressableButton>
+                  </span>
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-1.5 text-sm font-semibold text-slate-300">
+                    Current password <span className="font-normal text-slate-500">(optional)</span>
+                    <span className="relative block">
+                      <input type={showCurrentPassword ? 'text' : 'password'} autoComplete="current-password" value={editCurrentPassword} onChange={(e) => setEditCurrentPassword(e.target.value)} placeholder="Enter to verify" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 pr-11 text-white outline-none placeholder:text-slate-600 focus:border-purple-400" />
+                      <button type="button" onClick={() => setShowCurrentPassword((value) => !value)} title={showCurrentPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                    </span>
+                  </label>
+                  <label className="space-y-1.5 text-sm font-semibold text-slate-300">
+                    New password <span className="font-normal text-slate-500">(optional)</span>
+                    <span className="flex items-center gap-2">
+                      <span className="relative flex-1">
+                        <input type={showEditPassword ? 'text' : 'password'} autoComplete="new-password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Leave unchanged" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 pr-11 text-white outline-none placeholder:text-slate-600 focus:border-purple-400" />
+                        <button type="button" onClick={() => setShowEditPassword((value) => !value)} title={showEditPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                      </span>
+                      <PressableButton type="button" onClick={() => { const p = generateStrongPassword(); setEditPassword(p); setShowEditPassword(true); }} title="Generate strong password" className="shrink-0 rounded-xl bg-purple-500/15 p-2.5 text-purple-300 hover:bg-purple-500/25">
+                        <Wand2 className="h-4 w-4" />
+                      </PressableButton>
+                      <PressableButton type="button" onClick={() => editPassword && copyText('Password', editPassword)} title="Copy password" className="shrink-0 rounded-xl bg-slate-800 p-2.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+                        <Copy className="h-4 w-4" />
+                      </PressableButton>
+                    </span>
+                  </label>
+                </div>
+                <PressableButton type="button" onClick={() => updateAdmin()} disabled={!editUsername.trim()} className="w-full rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-black text-slate-950 hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50">Save Changes</PressableButton>
               </div>
+              </motion.div>
             )}
+            </AnimatePresence>
 
             <div className="mt-8">
               <div className="mb-4">
                 <h3 className="font-black text-white">Workspace access</h3>
-                <p className="text-sm text-slate-400">Assign a workspace, then open Details to manage its permissions.</p>
+                <p className="text-sm text-slate-400">Toggle a workspace on, then open Details to manage its permissions.</p>
+                {selectedAdmin.businessAccess.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {selectedAdmin.businessAccess.map((x: any) => (
+                      <span key={x.businessId} className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300">
+                        {x.business?.name || businesses.find((b) => b.id === x.businessId)?.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="space-y-4">
                 {businesses.map((biz) => {
                   const assigned = selectedAdmin.businessAccess.some((x: any) => x.businessId === biz.id);
                   const expanded = expandedWorkspaces[biz.id] === true;
                   return (
-                    <div key={biz.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                    <div key={biz.id} className={`rounded-2xl border p-4 transition-colors ${assigned ? 'border-emerald-500/25 bg-emerald-500/[0.03]' : 'border-slate-800 bg-slate-950/50'}`}>
                       <div className="flex items-center justify-between gap-3">
                         <PressableButton type="button" onClick={() => assigned && setExpandedWorkspaces((state) => ({ ...state, [biz.id]: !expanded }))} className="flex min-w-0 items-center gap-2 text-left">
                           <span className="break-words text-sm font-bold text-slate-200">{biz.name}</span>
                           {assigned && <span className="shrink-0 text-[10px] text-slate-500">{expanded ? 'Hide' : 'Details'}</span>}
                         </PressableButton>
-                        <PressableButton onClick={() => handleToggleBusinessAccess(selectedAdmin.id, biz.id, assigned)} disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`} className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-60 ${assigned ? 'bg-emerald-500/20 text-emerald-300' : 'bg-purple-500 text-slate-950'}`}>
-                          {accessUpdating === `${selectedAdmin.id}:${biz.id}` ? 'Saving...' : assigned ? 'Assigned' : 'Assign'}
-                        </PressableButton>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleBusinessAccess(selectedAdmin.id, biz.id, assigned)}
+                          disabled={accessUpdating === `${selectedAdmin.id}:${biz.id}`}
+                          title={assigned ? 'Revoke workspace access' : 'Grant workspace access'}
+                          className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-60 ${assigned ? 'justify-end bg-emerald-500' : 'justify-start bg-slate-700'}`}
+                        >
+                          <motion.span layout transition={springSnappy} className="inline-block h-5 w-5 rounded-full bg-white shadow" />
+                        </button>
                       </div>
                       <AnimatePresence initial={false}>
                         {assigned && expanded && (
@@ -353,7 +417,7 @@ export default function AdminManagement() {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                          <div className="mt-3 space-y-2">
+                          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                           {PERMISSION_LIST.map((perm) => {
                             const row = selectedAdmin.permissions.find((x: any) => x.businessId === biz.id && x.permissionKey === perm.key);
                             const enabled = row ? row.enabled : perm.defaultForAdmin;
@@ -393,8 +457,60 @@ export default function AdminManagement() {
       </Modal>
 
       {/* Create Admin Modal */}
-      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} maxWidth="max-w-md">
+      <Modal
+        open={showCreateModal}
+        onClose={() => { setShowCreateModal(false); setJustCreated(null); setCreateError(''); }}
+        maxWidth="max-w-md"
+      >
         <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl">
+          {justCreated ? (
+            <div className="p-6 space-y-5">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400">
+                  <PartyPopper className="h-6 w-6" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">Admin account created</h3>
+                <p className="text-xs text-slate-400">Copy these credentials now and send them to the admin — the password won&apos;t be shown again.</p>
+              </div>
+
+              <div className="space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Username</label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm font-mono text-slate-100">{justCreated.username}</code>
+                    <PressableButton type="button" onClick={() => copyText('Username', justCreated.username)} title="Copy username" className="shrink-0 rounded-xl bg-slate-800 p-2.5 text-slate-300 hover:bg-slate-700 hover:text-white">
+                      <Copy className="h-4 w-4" />
+                    </PressableButton>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm font-mono text-slate-100">{justCreated.password}</code>
+                    <PressableButton type="button" onClick={() => copyText('Password', justCreated.password)} title="Copy password" className="shrink-0 rounded-xl bg-slate-800 p-2.5 text-slate-300 hover:bg-slate-700 hover:text-white">
+                      <Copy className="h-4 w-4" />
+                    </PressableButton>
+                  </div>
+                </div>
+                <PressableButton
+                  type="button"
+                  onClick={() => copyText('Credentials', `Username: ${justCreated.username}\nPassword: ${justCreated.password}`)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-2.5 text-xs font-black text-slate-950"
+                >
+                  <Copy className="h-4 w-4" /> Copy Both as Text
+                </PressableButton>
+              </div>
+
+              <PressableButton
+                type="button"
+                onClick={() => { setJustCreated(null); setShowCreateModal(false); }}
+                className="w-full rounded-xl bg-slate-800 py-2.5 text-sm font-bold text-slate-200"
+              >
+                Done
+              </PressableButton>
+            </div>
+          ) : (
+          <>
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
               <h3 className="text-base font-bold text-slate-100">Create New Admin Account</h3>
               <PressableButton
@@ -408,28 +524,44 @@ export default function AdminManagement() {
             <form onSubmit={handleCreateAdmin} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Username *</label>
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. rahim.admin"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="e.g. rahim.admin"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
+                  />
+                  <PressableButton type="button" onClick={() => username && copyText('Username', username)} title="Copy username" className="shrink-0 rounded-xl bg-slate-800 p-2.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+                    <Copy className="h-4 w-4" />
+                  </PressableButton>
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Password *</label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-                />
-                <button type="button" onClick={() => setShowPassword((value) => !value)} title={showPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 pr-10 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
+                    />
+                    <button type="button" onClick={() => setShowPassword((value) => !value)} title={showPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-white">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                  </div>
+                  <PressableButton type="button" onClick={() => { const p = generateStrongPassword(); setPassword(p); setShowPassword(true); }} title="Generate strong password" className="shrink-0 rounded-xl bg-purple-500/15 p-2.5 text-purple-300 hover:bg-purple-500/25">
+                    <Wand2 className="h-4 w-4" />
+                  </PressableButton>
+                  <PressableButton type="button" onClick={() => password && copyText('Password', password)} title="Copy password" className="shrink-0 rounded-xl bg-slate-800 p-2.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+                    <Copy className="h-4 w-4" />
+                  </PressableButton>
+                </div>
+                <p className="mt-1.5 text-[10px] text-slate-500">Click the wand to auto-generate a strong password.</p>
               </div>
 
               {createError && <div role="alert" className="rounded-xl border border-red-500 bg-red-100/95 px-3 py-2 text-xs font-bold text-red-800">{createError}</div>}
@@ -450,6 +582,8 @@ export default function AdminManagement() {
                 </PressableButton>
               </div>
             </form>
+          </>
+          )}
         </div>
       </Modal>
     </div>
