@@ -1,9 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Package, Plus, Edit2, Trash2, CheckCircle, XCircle, Tag } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { confirmMutation } from '@/lib/confirmMutation';
+import Modal from '@/components/motion/Modal';
+import PressableButton from '@/components/motion/PressableButton';
+import { useToast } from '@/components/motion/Toast';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 
 interface ProductManagementProps {
   businessId: string;
@@ -11,6 +16,7 @@ interface ProductManagementProps {
 }
 
 export default function ProductManagement({ businessId, permissions }: ProductManagementProps) {
+  const toast = useToast();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -62,12 +68,14 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
         setUnitPrice('');
         setSku('');
         fetchProducts();
+        toast.success('Product added to catalog');
       } else {
         const json = await res.json();
-        alert(json.error || 'Failed to create product');
+        toast.error(json.error || 'Failed to create product');
       }
     } catch (err) {
       console.error('Error adding product:', err);
+      toast.error('Failed to create product');
     } finally {
       setSubmitting(false);
     }
@@ -83,9 +91,13 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
       });
       if (res.ok) {
         fetchProducts();
+        toast.success('Product availability updated');
+      } else {
+        toast.error('Failed to toggle availability');
       }
     } catch (err) {
       console.error('Failed to toggle availability:', err);
+      toast.error('Failed to toggle availability');
     }
   };
 
@@ -97,9 +109,13 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
       });
       if (res.ok) {
         fetchProducts();
+        toast.success('Product deleted');
+      } else {
+        toast.error('Failed to delete product');
       }
     } catch (err) {
       console.error('Failed to delete product:', err);
+      toast.error('Failed to delete product');
     }
   };
 
@@ -115,23 +131,26 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
         </div>
 
         {permissions['products:manage'] && (
-          <button
+          <PressableButton
             onClick={() => setShowAddModal(true)}
             className="order-primary flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             Add Product
-          </button>
+          </PressableButton>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" variants={staggerContainer} initial="hidden" animate="visible">
         {loading ? (
           <div className="col-span-full py-16 text-center text-slate-500 text-sm">Loading catalog...</div>
         ) : products.length > 0 ? (
           products.map((prod) => (
-            <div
+            <motion.div
               key={prod.id}
+              variants={staggerItem}
+              whileHover={{ y: -4 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               className="product-card relative flex flex-col justify-between overflow-hidden rounded-2xl p-5"
             >
               <div>
@@ -139,7 +158,7 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
                   <span className="product-sku">
                     {prod.sku || 'SKU-NONE'}
                   </span>
-                  <button
+                  <PressableButton
                     onClick={() => permissions['products:manage'] && handleToggleAvailability(prod.id, prod.isAvailable)}
                     disabled={!permissions['products:manage']}
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -147,7 +166,7 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
                     }`}
                   >
                     {prod.isAvailable ? 'In Stock' : 'Out of Stock'}
-                  </button>
+                  </PressableButton>
                 </div>
 
                 <div className="product-image"><Package className="h-8 w-8" /></div>
@@ -160,36 +179,35 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
 
               {permissions['products:manage'] && (
                 <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-200 pt-3">
-                  <button
+                  <PressableButton
                     onClick={() => handleDeleteProduct(prod.id)}
                     className="order-action order-action-delete"
                     title="Delete product"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </PressableButton>
                 </div>
               )}
-            </div>
+            </motion.div>
           ))
         ) : (
           <div className="col-span-full py-16 text-center text-slate-500 text-sm">
             No products found in this business catalog
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Add Product Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+      <Modal open={showAddModal} onClose={() => setShowAddModal(false)} maxWidth="max-w-md">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full overflow-hidden shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
               <h3 className="text-base font-bold text-slate-100">Add Product to Catalog</h3>
-              <button
+              <PressableButton
                 onClick={() => setShowAddModal(false)}
                 className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
               >
                 <XCircle className="w-5 h-5" />
-              </button>
+              </PressableButton>
             </div>
 
             <form onSubmit={handleAddProduct} className="p-6 space-y-4">
@@ -230,25 +248,24 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
-                <button
+                <PressableButton
                   type="button"
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
                 >
                   Cancel
-                </button>
-                <button
+                </PressableButton>
+                <PressableButton
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20"
                 >
                   {submitting ? 'Saving...' : 'Add Product'}
-                </button>
+                </PressableButton>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
