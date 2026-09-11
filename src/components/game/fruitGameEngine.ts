@@ -74,7 +74,7 @@ export class FruitSliceEngine {
     this.callbacks = callbacks;
 
     this.app = new PIXI.Application({
-      resizeTo: window,
+      resizeTo: container,
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
