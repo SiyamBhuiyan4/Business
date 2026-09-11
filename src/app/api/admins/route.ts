@@ -19,6 +19,7 @@ export async function GET() {
       email: true,
       username: true,
       active: true,
+      adminPin: true,
       createdAt: true,
       businessAccess: {
         include: {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { name, username, email, password, assignedBusinessIds } = await request.json();
+    const { name, username, email, password, assignedBusinessIds, adminPin } = await request.json();
 
     if (!name || !username || !password) {
       return NextResponse.json({ error: 'Name, Username, and Password are required' }, { status: 400 });
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
         email: email?.toLowerCase().trim() || `${normalizedUsername}@local.invalid`,
         passwordHash,
         role: 'ADMIN',
+        adminPin: typeof adminPin === 'string' && adminPin.trim() ? adminPin.trim() : null,
       },
     });
 
@@ -109,12 +111,13 @@ export async function DELETE(request: Request) {
 export async function PUT(request: Request) {
   const user = await getSessionUser();
   if (!user || user.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'Only Super Admin can edit admin accounts' }, { status: 403 });
-  const { id, name, username, email, password, currentPassword, active } = await request.json();
+  const { id, name, username, email, password, currentPassword, active, adminPin } = await request.json();
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target || target.role !== 'ADMIN') return NextResponse.json({ error: 'Only normal admin accounts can be edited' }, { status: 400 });
   if (currentPassword && !(await comparePassword(String(currentPassword), target.passwordHash))) return NextResponse.json({ error: 'Current password is incorrect.' }, { status: 403 });
   const data: any = { username: username?.toLowerCase().trim(), active: typeof active === 'boolean' ? active : target.active };
   if (password) data.passwordHash = await hashPassword(password);
-  const admin = await prisma.user.update({ where: { id }, data, select: { id: true, name: true, email: true, role: true, active: true } });
+  if (typeof adminPin === 'string') data.adminPin = adminPin.trim() || null;
+  const admin = await prisma.user.update({ where: { id }, data, select: { id: true, name: true, email: true, role: true, active: true, adminPin: true } });
   return NextResponse.json({ success: true, admin });
 }

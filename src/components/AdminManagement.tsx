@@ -31,6 +31,8 @@ export default function AdminManagement() {
   const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
   const [editCurrentPassword, setEditCurrentPassword] = useState('');
+  const [editAdminPin, setEditAdminPin] = useState('');
+  const [revealedPins, setRevealedPins] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -74,12 +76,12 @@ export default function AdminManagement() {
     fetchData();
   }, []);
 
-  const openAdmin = (admin: any) => { setSelectedAdmin(admin); setEditMode(false); setEditName(admin.name); setEditEmail(admin.email); setEditUsername(admin.username || admin.email.split('@')[0]); setEditPassword(''); setEditCurrentPassword(''); };
+  const openAdmin = (admin: any) => { setSelectedAdmin(admin); setEditMode(false); setEditName(admin.name); setEditEmail(admin.email); setEditUsername(admin.username || admin.email.split('@')[0]); setEditPassword(''); setEditCurrentPassword(''); setEditAdminPin(admin.adminPin || ''); };
   const updateAdmin = async (active: boolean = selectedAdmin.active, remove = false) => {
     if (remove) { const res = await fetch(`/api/admins?id=${selectedAdmin.id}`, { method: 'DELETE' }); if (res.ok) { setSelectedAdmin(null); setShowDeleteConfirm(false); fetchData(); toast.success('Admin deleted'); } return; }
     const nextPassword = editPassword.trim();
-    const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, username: editUsername, email: editEmail, password: nextPassword || undefined, currentPassword: editCurrentPassword || undefined, active }) });
-    if (res.ok) { setSelectedAdmin({ ...selectedAdmin, name: editName, email: editEmail, active }); setEditMode(false); fetchData(); toast.success(active === selectedAdmin.active ? 'Admin updated' : active ? 'Admin activated' : 'Admin deactivated'); }
+    const res = await fetch('/api/admins', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: selectedAdmin.id, name: editName, username: editUsername, email: editEmail, password: nextPassword || undefined, currentPassword: editCurrentPassword || undefined, active, adminPin: editAdminPin }) });
+    if (res.ok) { setSelectedAdmin({ ...selectedAdmin, name: editName, email: editEmail, active, adminPin: editAdminPin || null }); setEditMode(false); fetchData(); toast.success(active === selectedAdmin.active ? 'Admin updated' : active ? 'Admin activated' : 'Admin deactivated'); }
     else toast.error('Failed to update admin');
   };
 
@@ -273,6 +275,17 @@ export default function AdminManagement() {
               </div>
 
               <div className="grid grid-cols-3 gap-2 py-4"><div className="admin-mini-stat"><div className="admin-card-label">Workspaces</div><div className="admin-mini-value">{adm.businessAccess.length}</div></div><div className="admin-mini-stat"><div className="admin-card-label">Enabled</div><div className="admin-mini-value">{adm.permissions.filter((p: any) => p.enabled).length}</div></div><div className="admin-mini-stat"><div className="admin-card-label">Joined</div><div className="admin-mini-value truncate">{new Date(adm.createdAt).toLocaleDateString()}</div></div></div>
+              {adm.adminPin && (
+                <div className="admin-mini-stat mb-4 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="min-w-0">
+                    <div className="admin-card-label">Reference PIN <span className="normal-case font-normal opacity-60">(note only)</span></div>
+                    <div className="admin-mini-value truncate font-mono">{revealedPins[adm.id] ? adm.adminPin : '••••••••'}</div>
+                  </div>
+                  <PressableButton onClick={() => setRevealedPins((s) => ({ ...s, [adm.id]: !s[adm.id] }))} title={revealedPins[adm.id] ? 'Hide PIN' : 'Show PIN'} className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:text-white">
+                    {revealedPins[adm.id] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </PressableButton>
+                </div>
+              )}
               <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap gap-1.5">{adm.businessAccess.slice(0, 2).map((x: any) => <span key={x.businessId} className="max-w-[150px] truncate rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-300">{x.business.name}</span>)}</div><div className="flex gap-2"><PressableButton onClick={(e: React.MouseEvent) => { e.stopPropagation(); loginAs(adm); }} className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950">Login As</PressableButton><PressableButton onClick={(e: React.MouseEvent) => { e.stopPropagation(); openAdmin(adm); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-purple-500 px-3 py-2 text-xs font-bold text-slate-950"><Key className="w-3.5 h-3.5" /> Manage</PressableButton></div></div>
             </motion.div>
           ))}
@@ -367,6 +380,10 @@ export default function AdminManagement() {
                     </span>
                   </label>
                 </div>
+                <label className="block space-y-1.5 text-sm font-semibold text-slate-300">
+                  Reference PIN <span className="font-normal text-slate-500">(your private note — not a login credential, never checked at sign-in)</span>
+                  <input value={editAdminPin} onChange={(e) => setEditAdminPin(e.target.value)} placeholder="e.g. a code only you use to remember this account" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-purple-400" />
+                </label>
                 <PressableButton type="button" onClick={() => updateAdmin()} disabled={!editUsername.trim()} className="w-full rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-black text-slate-950 hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-50">Save Changes</PressableButton>
               </div>
               </motion.div>

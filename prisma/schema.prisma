@@ -15,6 +15,7 @@ model User {
   passwordHash        String
   role                String                @default("ADMIN") // SUPER_ADMIN, ADMIN
   active              Boolean               @default(true)
+  adminPin            String? // Super Admin reference note only -- never checked during login/auth
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   
