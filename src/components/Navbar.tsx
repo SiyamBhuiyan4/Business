@@ -3,8 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Store, Shield, LogOut, ChevronDown, UserCheck, Plus } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import PressableButton from '@/components/motion/PressableButton';
+import { dropdownPop, staggerItem } from '@/lib/motion';
 
 interface NavbarProps {
   user: {
@@ -42,9 +45,13 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
         {/* Left: Brand Logo & Business Switcher */}
         <div className="flex items-center gap-3 min-w-0">
           <Link href={workspaceBase} className="flex items-center gap-2.5 group">
-            <div className="navbar-brand-icon flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-105">
+            <motion.div
+              className="navbar-brand-icon flex h-10 w-10 items-center justify-center rounded-xl"
+              whileHover={{ scale: 1.08, rotate: -4 }}
+              whileTap={{ scale: 0.94 }}
+            >
               <Store className="h-5 w-5" />
-            </div>
+            </motion.div>
             <div>
               <span className="navbar-brand-name text-lg font-extrabold tracking-tight">
                 Rise
@@ -55,7 +62,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
           {/* Business Switcher Dropdown */}
           {businesses.length > 0 && (
             <div className="relative">
-              <button
+              <PressableButton
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="navbar-workspace flex max-w-[210px] items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold sm:max-w-none"
               >
@@ -63,42 +70,58 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
                 <span className="max-w-[150px] sm:max-w-[220px] truncate">
                   {currentBusiness ? currentBusiness.name : 'Select Business'}
                 </span>
-                <ChevronDown className="ml-1 h-4 w-4 text-[#7C8798]" />
-              </button>
+                <motion.span animate={{ rotate: dropdownOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronDown className="ml-1 h-4 w-4 text-[#7C8798]" />
+                </motion.span>
+              </PressableButton>
 
-              {dropdownOpen && (
-                <div className="navbar-dropdown absolute left-0 mt-2 w-64 rounded-2xl py-2 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider">
-                    Workspaces
-                  </div>
-                  <Link
-                    href={workspaceBase}
-                    onClick={() => setDropdownOpen(false)}
-                    className="navbar-dropdown-item flex items-center gap-2.5 px-3 py-2 text-sm"
-                  >
-                    <Store className="w-4 h-4 text-slate-400" />
-                    All Businesses Overview
-                  </Link>
-                  <div className="my-1 border-t border-slate-800" />
-                  {businesses.map((biz) => (
-                    <Link
-                      key={biz.id}
-                      href={`${workspaceBase}/${biz.slug}`}
-                      onClick={() => setDropdownOpen(false)}
-                      className={`flex items-center justify-between px-3 py-2 text-sm transition-colors ${
-                        biz.slug === currentBusinessSlug
-                        ? 'navbar-dropdown-active font-semibold'
-                          : 'navbar-dropdown-item'
-                      }`}
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
+                    <motion.div
+                      className="navbar-dropdown absolute left-0 z-50 mt-2 w-64 rounded-2xl py-2"
+                      variants={dropdownPop}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
                     >
-                      <span className="truncate">{biz.name}</span>
-                      {biz.slug === currentBusinessSlug && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              )}
+                      <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider">
+                        Workspaces
+                      </div>
+                      <motion.div variants={staggerItem}>
+                        <Link
+                          href={workspaceBase}
+                          onClick={() => setDropdownOpen(false)}
+                          className="navbar-dropdown-item flex items-center gap-2.5 px-3 py-2 text-sm"
+                        >
+                          <Store className="w-4 h-4 text-slate-400" />
+                          All Businesses Overview
+                        </Link>
+                      </motion.div>
+                      <div className="my-1 border-t border-slate-800" />
+                      {businesses.map((biz) => (
+                        <motion.div key={biz.id} variants={staggerItem}>
+                          <Link
+                            href={`${workspaceBase}/${biz.slug}`}
+                            onClick={() => setDropdownOpen(false)}
+                            className={`flex items-center justify-between px-3 py-2 text-sm transition-colors ${
+                              biz.slug === currentBusinessSlug
+                              ? 'navbar-dropdown-active font-semibold'
+                                : 'navbar-dropdown-item'
+                            }`}
+                          >
+                            <span className="truncate">{biz.name}</span>
+                            {biz.slug === currentBusinessSlug && (
+                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                            )}
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -130,13 +153,13 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
           </div>
 
           <ThemeToggle />
-          <button
+          <PressableButton
             onClick={handleLogout}
             title="Log out"
-            className="navbar-logout rounded-xl p-2 transition-colors"
+            className="navbar-logout rounded-xl p-2"
           >
             <LogOut className="w-4 h-4" />
-          </button>
+          </PressableButton>
         </div>
       </div>
     </header>
