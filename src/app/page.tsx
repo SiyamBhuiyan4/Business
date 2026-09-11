@@ -1,3 +1,42 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, UserCog } from 'lucide-react';
+import AuthLayout from '@/components/AuthLayout';
+import PressableButton from '@/components/motion/PressableButton';
+
 export default function RootPage() {
-  return <main className="min-h-screen bg-[#0b0f19] flex items-center justify-center p-4 text-slate-100"><div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center shadow-2xl"><p className="text-xs font-bold uppercase tracking-widest text-emerald-400">Rise</p><h1 className="mt-2 text-3xl font-black">Business Dashboard</h1><p className="mt-3 text-sm text-slate-400">Sign in to access your assigned business workspace.</p><a href="/admin/login" className="mt-7 block rounded-xl bg-emerald-500 px-4 py-3 text-xs font-black text-slate-950">Admin Login</a></div></main>;
+  const router = useRouter();
+
+  return (
+    <AuthLayout
+      as="div"
+      eyebrow="Rise"
+      title="Business Dashboard"
+      subtitle="Sign in to access your assigned business workspace, or the full control panel."
+      accent="teal"
+    >
+      <div className="space-y-3 pt-2">
+        <PressableButton
+          onClick={() => router.push('/admin/login')}
+          className="glass-button flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-extrabold"
+        >
+          <UserCog className="h-4 w-4" />
+          Admin Sign In
+        </PressableButton>
+
+        <PressableButton
+          onClick={() => router.push('/super-admin/login')}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-xs font-extrabold text-white"
+          style={{
+            background: 'linear-gradient(135deg, var(--copper), var(--copper-deep))',
+            boxShadow: '0 10px 25px -5px rgba(166,99,60,.4)',
+          }}
+        >
+          <ShieldCheck className="h-4 w-4" />
+          Super Admin Sign In
+        </PressableButton>
+      </div>
+    </AuthLayout>
+  );
 }

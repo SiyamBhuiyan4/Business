@@ -46,8 +46,8 @@ export default function ContextMenu({ items, children, className = '' }: Context
         {pos && (
           <motion.div
             ref={menuRef}
-            className="fixed z-[1000] min-w-[160px] overflow-hidden rounded-xl border border-slate-700 bg-slate-900/95 py-1.5 shadow-2xl backdrop-blur-xl"
-            style={{ left: pos.x, top: pos.y }}
+            className="fixed z-[1000] min-w-[160px] overflow-hidden rounded-xl py-1.5 shadow-2xl backdrop-blur-xl"
+            style={{ left: pos.x, top: pos.y, background: 'var(--glass-strong)', border: '1px solid var(--glass-border)' }}
             variants={dropdownPop}
             initial="hidden"
             animate="visible"
@@ -59,8 +59,9 @@ export default function ContextMenu({ items, children, className = '' }: Context
                 key={item.key}
                 onClick={() => { item.onSelect(); setPos(null); }}
                 className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold transition-colors ${
-                  item.danger ? 'text-rose-400 hover:bg-rose-500/10' : 'text-slate-200 hover:bg-slate-800'
+                  item.danger ? 'text-rose-500 hover:bg-rose-500/10' : 'hover:bg-[rgba(26,83,92,.08)]'
                 }`}
+                style={item.danger ? undefined : { color: 'var(--ink)' }}
               >
                 {item.icon && <item.icon className="h-3.5 w-3.5" />}
                 {item.label}
