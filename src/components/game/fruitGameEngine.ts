@@ -31,6 +31,8 @@ interface Particle {
   vy: number;
   life: number;
   maxLife: number;
+  /** Grows in scale as it fades, for a soft spore-cloud puff instead of a sharp flying speck. */
+  expands?: boolean;
 }
 
 const GRAVITY = 0.32;
@@ -136,7 +138,11 @@ export class FruitSliceEngine {
       const p = toLocal(e);
       this.lastPoint = p;
       this.trail.push({ ...p, t: performance.now() });
-      canvas.setPointerCapture(e.pointerId);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // Some input devices/browsers report a pointerId that can't be captured -- slicing still works without capture.
+      }
     };
     const onMove = (e: PointerEvent) => {
       if (!this.pointerDown || this.gameOver) return;
@@ -243,6 +249,30 @@ export class FruitSliceEngine {
 
     this.spawnHalves(fruit, x, y);
     this.spawnParticleBurst(x, y, fruit.def.color, 14);
+    this.spawnSporeCloud(x, y);
+  }
+
+  /** Soft, slow-expanding puffs to sell the "spores releasing" moment on a mushroom slice. */
+  private spawnSporeCloud(x: number, y: number) {
+    const PIXI = this.PIXI;
+    for (let i = 0; i < 4; i++) {
+      const g = new PIXI.Graphics();
+      const r = 6 + Math.random() * 5;
+      g.beginFill(0xf5f0e6, 0.35);
+      g.drawCircle(0, 0, r);
+      g.endFill();
+      g.x = x + (Math.random() - 0.5) * 20;
+      g.y = y + (Math.random() - 0.5) * 20;
+      this.particleLayer.addChild(g);
+      this.particles.push({
+        view: g,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: -0.6 - Math.random() * 0.6,
+        life: 0,
+        maxLife: 900 + Math.random() * 400,
+        expands: true,
+      });
+    }
   }
 
   private spawnHalves(fruit: ActiveFruit, x: number, y: number) {
@@ -355,7 +385,9 @@ export class FruitSliceEngine {
       p.vy += GRAVITY * 0.5 * dt;
       p.view.x += p.vx * dt;
       p.view.y += p.vy * dt;
-      p.view.alpha = Math.max(0, 1 - p.life / p.maxLife);
+      const lifePct = p.life / p.maxLife;
+      p.view.alpha = Math.max(0, 1 - lifePct);
+      if (p.expands) p.view.scale.set(1 + lifePct * 2.2);
       if (p.life >= p.maxLife) {
         this.particleLayer.removeChild(p.view);
         p.view.destroy({ children: true });

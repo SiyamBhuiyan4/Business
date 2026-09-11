@@ -129,7 +129,7 @@ export default function FruitNinjaGame() {
 
             {/* Lives - top left */}
             <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2 rounded-2xl bg-black/40 px-4 py-2 backdrop-blur-sm">
-              <span className="text-2xl">{'\u{1F352}'.repeat(Math.max(0, lives))}</span>
+              <span className="text-2xl">{'\u{1F344}'.repeat(Math.max(0, lives))}</span>
               <span className="text-sm font-bold text-white/70">x{Math.max(0, lives)}</span>
             </div>
 
