@@ -4,6 +4,7 @@ import './globals.css';
 import BlueprintAmbient from '@/components/BlueprintAmbient';
 import CursorTrail from '@/components/CursorTrail';
 import LoadingScreen from '@/components/LoadingScreen';
+import FruitNinjaGame from '@/components/game/FruitNinjaGame';
 import { ToastProvider } from '@/components/motion/Toast';
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function RootLayout({
             <BlueprintAmbient />
             <CursorTrail />
             <div className="relative z-10 min-h-screen">{children}</div>
+            <FruitNinjaGame />
           </ToastProvider>
         </MotionConfig>
       </body>
