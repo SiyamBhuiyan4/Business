@@ -7,7 +7,7 @@ import Modal from '@/components/motion/Modal';
 import PressableButton from '@/components/motion/PressableButton';
 import Tabs from '@/components/motion/Tabs';
 import { useToast } from '@/components/motion/Toast';
-import { staggerContainer, staggerItem } from '@/lib/motion';
+import { dropdownPop, staggerContainer, staggerItem } from '@/lib/motion';
 import {
   ShoppingBag,
   Filter,
@@ -52,6 +52,15 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
+  const [rowMenu, setRowMenu] = useState<{ x: number; y: number; order: any } | null>(null);
+
+  useEffect(() => {
+    if (!rowMenu) return;
+    const close = () => setRowMenu(null);
+    window.addEventListener('click', close);
+    window.addEventListener('scroll', close, true);
+    return () => { window.removeEventListener('click', close); window.removeEventListener('scroll', close, true); };
+  }, [rowMenu]);
 
   // Create Form State
   const [products, setProducts] = useState<any[]>([]);
@@ -304,6 +313,7 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                     whileHover={{ y: -1 }}
                     className="order-row transition-colors group cursor-pointer"
                     onClick={() => setSelectedOrder(ord)}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setRowMenu({ x: e.clientX, y: e.clientY, order: ord }); }}
                   >
                     <td className="px-5 py-4">
                       <div className="font-bold text-[#0F172A] text-sm">{ord.customerName}</div>
@@ -396,6 +406,31 @@ export default function PendingOrders({ businessId, permissions, onOrderChange }
                 ))}
               </motion.tbody>
             </table>
+            <AnimatePresence>
+              {rowMenu && (
+                <motion.div
+                  className="fixed z-[1000] min-w-[160px] overflow-hidden rounded-xl border border-slate-700 bg-slate-900/95 py-1.5 shadow-2xl backdrop-blur-xl"
+                  style={{ left: rowMenu.x, top: rowMenu.y }}
+                  variants={dropdownPop}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button onClick={() => { setSelectedOrder(rowMenu.order); setRowMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-slate-200 hover:bg-slate-800">
+                    <Eye className="h-3.5 w-3.5" /> View details
+                  </button>
+                  {permissions['orders:manage'] && <>
+                    <button onClick={() => { handleEditOrder(rowMenu.order); setRowMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-slate-200 hover:bg-slate-800">
+                      Edit order
+                    </button>
+                    <button onClick={() => { handleDeleteOrder(rowMenu.order); setRowMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-rose-400 hover:bg-rose-500/10">
+                      Delete order
+                    </button>
+                  </>}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ) : (
           <div className="py-16 text-center">

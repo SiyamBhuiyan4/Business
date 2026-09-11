@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 import { confirmMutation } from '@/lib/confirmMutation';
 import Modal from '@/components/motion/Modal';
 import PressableButton from '@/components/motion/PressableButton';
+import ContextMenu from '@/components/motion/ContextMenu';
 import { useToast } from '@/components/motion/Toast';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 
@@ -145,9 +146,9 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
         {loading ? (
           <div className="col-span-full py-16 text-center text-slate-500 text-sm">Loading catalog...</div>
         ) : products.length > 0 ? (
-          products.map((prod) => (
+          products.map((prod) => {
+            const card = (
             <motion.div
-              key={prod.id}
               variants={staggerItem}
               whileHover={{ y: -4 }}
               transition={{ type: 'spring', stiffness: 300, damping: 24 }}
@@ -189,7 +190,21 @@ export default function ProductManagement({ businessId, permissions }: ProductMa
                 </div>
               )}
             </motion.div>
-          ))
+            );
+            return permissions['products:manage'] ? (
+              <ContextMenu
+                key={prod.id}
+                items={[
+                  { key: 'toggle', label: prod.isAvailable ? 'Mark out of stock' : 'Mark in stock', onSelect: () => handleToggleAvailability(prod.id, prod.isAvailable) },
+                  { key: 'delete', label: 'Delete product', danger: true, onSelect: () => handleDeleteProduct(prod.id) },
+                ]}
+              >
+                {card}
+              </ContextMenu>
+            ) : (
+              <React.Fragment key={prod.id}>{card}</React.Fragment>
+            );
+          })
         ) : (
           <div className="col-span-full py-16 text-center text-slate-500 text-sm">
             No products found in this business catalog

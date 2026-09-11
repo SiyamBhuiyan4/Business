@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 export function NetworkGlobe() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const canvas = ref.current; const ctx = canvas?.getContext('2d'); if (!canvas || !ctx) return;
+    const canvas = ref.current; const ctx = canvas?.getContext('2d'); if (!canvas || !ctx || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let raf = 0; let w = 0; let h = 0;
     const resize = () => { const d = Math.min(devicePixelRatio || 1, 2); w = canvas.clientWidth; h = canvas.clientHeight; canvas.width = w * d; canvas.height = h * d; ctx.setTransform(d, 0, 0, d, 0, 0); };
     const nodes = Array.from({ length: 150 }, (_, i) => ({ lat: -1.42 + (i % 19) * .158, lon: (i * 2.399) % (Math.PI * 2), size: 1.2 + i % 3 * .35 }));
