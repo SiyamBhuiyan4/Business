@@ -215,7 +215,6 @@ export default function DashboardOverviewPage() {
                         </div>
                         <div>
                           <h3 className="text-xl font-extrabold text-slate-100">{biz.name}</h3>
-                          <span className="text-xs font-mono text-slate-400">/{biz.slug}</span>
                         </div>
                       </div>
 

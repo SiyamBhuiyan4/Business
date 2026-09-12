@@ -58,7 +58,6 @@ export default function AdminDashboardPage() {
                     </div>
                     <div>
                       <h2 className="text-xl font-extrabold text-slate-100">{business.name}</h2>
-                      <span className="text-xs font-mono text-slate-400">/{business.slug}</span>
                     </div>
                   </div>
 
