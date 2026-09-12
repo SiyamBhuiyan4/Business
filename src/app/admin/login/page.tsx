@@ -36,11 +36,6 @@ export default function AdminLoginPage() {
       accent="teal"
       onSubmit={submit}
       shakeControls={shakeControls}
-      footerSlot={
-        <a href="/super-admin/login" className="block text-center text-[11px] font-semibold" style={{ color: 'var(--copper)' }}>
-          Super Admin instead →
-        </a>
-      }
     >
       <AnimatePresence>
         {error && (
