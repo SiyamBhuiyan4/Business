@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Store, ArrowRight, Building2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
 import Navbar from '@/components/Navbar';
+import { InvestmentMetric, OrdersMetric, ProductsMetric, SalesMetric } from '@/components/MetricVisuals';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 
 export default function AdminDashboardPage() {
@@ -62,11 +62,11 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">
-                      Today's sales <b className="ml-1 text-emerald-400">{formatCurrency(business.todaySales)}</b>
-                    </span>
-                    <span className="text-slate-400">{business.pendingOrdersCount} pending</span>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+                    <InvestmentMetric value={business.investment || 0} />
+                    <SalesMetric value={business.todaySales || 0} />
+                    <OrdersMetric value={business.pendingOrdersCount || 0} />
+                    <ProductsMetric value={business.totalProductsCount || 0} />
                   </div>
                 </div>
 
