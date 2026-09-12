@@ -315,8 +315,8 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
             ) : data?.salesOverTime?.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={data.salesOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(226,232,240,.8)" />
-                  <XAxis dataKey="displayDate" stroke="#64748b" fontSize={12} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
+                  <XAxis dataKey="displayDate" stroke="var(--muted)" fontSize={12} tickLine={false} />
                   <YAxis yAxisId="left" stroke="#10b981" fontSize={12} tickLine={false} tickFormatter={(val) => `৳${val}`} />
                   <YAxis yAxisId="right" orientation="right" stroke="#6366f1" fontSize={12} tickLine={false} />
                   <Tooltip
