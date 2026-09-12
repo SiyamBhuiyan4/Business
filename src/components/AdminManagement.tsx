@@ -258,8 +258,8 @@ export default function AdminManagement() {
               {/* Admin Header */}
               <div className="flex items-start justify-between gap-3 pb-5 border-b border-slate-800">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-400 text-slate-950 font-black text-xl flex items-center justify-center shadow-lg shadow-purple-950/30">
-                    {adm.name.charAt(0)}
+                  <div className="w-14 h-14 shrink-0 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <UserCheck className="w-7 h-7" />
                   </div>
                   <div className="min-w-0">
                     <div className="admin-card-label mb-1">Administrator</div>
