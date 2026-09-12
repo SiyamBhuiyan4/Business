@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { GameOverReason } from './fruitGameEngine';
-import MushroomIcon from '@/components/icons/MushroomIcon';
+import { useMushroomGame } from './MushroomGameContext';
 
 /**
  * Full-viewport ambient background slicing layer. It sits BEHIND real dashboard
@@ -50,7 +50,6 @@ const EXCLUSION_SELECTOR = [
   '.bulk-modal',
 ].join(', ');
 
-const ENABLED_KEY = 'bizhub-mushroom-game-enabled';
 const HIGH_SCORE_KEY = 'bizhub-mushroom-high-score';
 const FLASH_DURATION_MS = 2200;
 
@@ -66,7 +65,7 @@ function computeExclusionRects(): DOMRect[] {
 type UiState = 'idle' | 'active';
 
 export default function FruitNinjaGame() {
-  const [enabled, setEnabled] = useState(true);
+  const { enabled } = useMushroomGame();
   const [uiState, setUiState] = useState<UiState>('idle');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
@@ -83,21 +82,11 @@ export default function FruitNinjaGame() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(ENABLED_KEY);
-      if (saved !== null) setEnabled(saved === 'on');
       const hs = Number(localStorage.getItem(HIGH_SCORE_KEY) || 0);
       if (Number.isFinite(hs)) setHighScore(hs);
     } catch {
-      // localStorage unavailable -- defaults stay as-is
+      // localStorage unavailable -- default stays as-is
     }
-  }, []);
-
-  const toggle = useCallback(() => {
-    setEnabled((prev) => {
-      const next = !prev;
-      try { localStorage.setItem(ENABLED_KEY, next ? 'on' : 'off'); } catch {}
-      return next;
-    });
   }, []);
 
   const clearFlashTimeout = useCallback(() => {
@@ -267,29 +256,6 @@ export default function FruitNinjaGame() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ON/OFF toggle - top-right on every page, just under the sticky navbar so it
-          never fights the navbar's own buttons for the same pixels. */}
-      <button
-        data-game-ui
-        onClick={toggle}
-        title={enabled ? 'Turn off background slicing' : 'Turn on background slicing'}
-        className={`pointer-events-auto fixed top-20 right-4 z-20 flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold shadow-lg backdrop-blur-md transition-colors ${
-          enabled
-            ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30'
-            : 'border-rose-400/50 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30'
-        }`}
-      >
-        <MushroomIcon className="h-4 w-4" strokeWidth={2.5} />
-        <span className="hidden sm:inline">Mushroom Game</span>
-        <span
-          className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${enabled ? 'bg-emerald-400' : 'bg-rose-400/70'}`}
-        >
-          <span
-            className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`}
-          />
-        </span>
-      </button>
 
       {/* Extends every page's scrollable height so there's always open, card-free
           space at the bottom to slice in freely. */}

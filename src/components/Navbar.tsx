@@ -7,6 +7,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Store, Shield, LogOut, ChevronDown, UserCheck, Plus } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import PressableButton from '@/components/motion/PressableButton';
+import MushroomIcon from '@/components/icons/MushroomIcon';
+import { useMushroomGame } from '@/components/game/MushroomGameContext';
 import { dropdownPop, staggerItem } from '@/lib/motion';
 
 interface NavbarProps {
@@ -29,6 +31,7 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
   const router = useRouter();
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
+  const { enabled: mushroomGameEnabled, toggle: toggleMushroomGame } = useMushroomGame();
 
   const currentBusiness = businesses.find((b) => b.slug === currentBusinessSlug);
   const workspaceBase = user?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard';
@@ -151,6 +154,16 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
               </div>
             </div>
           </div>
+
+          <PressableButton
+            onClick={toggleMushroomGame}
+            title="Toggle Mushroom Slicer Mode"
+            aria-label="Toggle Mushroom Slicer Mode"
+            className="mushroom-toggle"
+          >
+            <MushroomIcon className="h-4 w-4" strokeWidth={2.2} />
+            {mushroomGameEnabled && <span aria-hidden="true" className="mushroom-toggle-dot" />}
+          </PressableButton>
 
           <ThemeToggle />
           <PressableButton
