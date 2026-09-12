@@ -159,10 +159,9 @@ export default function Navbar({ user, businesses = [], currentBusinessSlug }: N
             onClick={toggleMushroomGame}
             title="Toggle Mushroom Slicer Mode"
             aria-label="Toggle Mushroom Slicer Mode"
-            className="mushroom-toggle"
+            className={`mushroom-toggle ${mushroomGameEnabled ? 'mushroom-toggle-active' : 'mushroom-toggle-inactive'}`}
           >
             <MushroomIcon className="h-4 w-4" strokeWidth={2.2} />
-            {mushroomGameEnabled && <span aria-hidden="true" className="mushroom-toggle-dot" />}
           </PressableButton>
 
           <ThemeToggle />
