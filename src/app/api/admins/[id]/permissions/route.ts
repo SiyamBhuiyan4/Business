@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getDefaultPermissions } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,9 @@ export async function PUT(
     }
 
     // Ensure access record exists
+    const existedBefore = await prisma.adminBusinessAccess.findUnique({
+      where: { userId_businessId: { userId: params.id, businessId } },
+    });
     await prisma.adminBusinessAccess.upsert({
       where: {
         userId_businessId: { userId: params.id, businessId },
@@ -69,6 +73,24 @@ export async function PUT(
           update: {
             enabled: Boolean(enabled),
           },
+        });
+      }
+    } else if (!existedBefore) {
+      // Newly granting access with no explicit permissions payload -- seed the sensible
+      // defaults instead of leaving every permission unset, which renders as a fully
+      // blank, "no sections enabled" workspace for the admin until someone notices.
+      const defaults = getDefaultPermissions();
+      for (const [permKey, enabled] of Object.entries(defaults)) {
+        await prisma.adminPermission.upsert({
+          where: {
+            userId_businessId_permissionKey: {
+              userId: params.id,
+              businessId,
+              permissionKey: permKey,
+            },
+          },
+          create: { userId: params.id, businessId, permissionKey: permKey, enabled },
+          update: {},
         });
       }
     }
