@@ -146,6 +146,12 @@ export default function BusinessDashboardPage() {
     );
   }
 
+  const hasAnyPermission =
+    user?.role === 'SUPER_ADMIN' ||
+    !!permissions['sales:view'] ||
+    !!permissions['orders:view'] ||
+    !!permissions['products:manage'];
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar user={user} businesses={businesses} currentBusinessSlug={slug} />
@@ -174,7 +180,20 @@ export default function BusinessDashboardPage() {
           )}
         </div>
 
+        {!hasAnyPermission && (
+          <div className="glass-panel flex flex-col items-center justify-center gap-2 rounded-3xl p-12 text-center">
+            <Lock className="w-8 h-8 text-rose-500" />
+            <h2 className="text-base font-bold" style={{ color: 'var(--ink)' }}>No Sections Enabled Yet</h2>
+            <p className="max-w-sm text-xs" style={{ color: 'var(--muted)' }}>
+              You don't have any permissions turned on for this business. Ask the Super Admin to enable at least one
+              section (Sales, Orders, or Products) for you under Admin Permissions.
+            </p>
+          </div>
+        )}
+
         {/* Tab Navigation Controls */}
+        {hasAnyPermission && (
+        <>
         <div className="glass-panel flex items-center gap-2 overflow-x-auto rounded-2xl p-2">
           {permissions['sales:view'] && (
             <>
@@ -278,7 +297,7 @@ export default function BusinessDashboardPage() {
                 />
               )}
 
-              {activeTab === 'products' && (
+              {activeTab === 'products' && permissions['products:manage'] && (
                 <ProductManagement businessId={currentBusiness.id} permissions={permissions} />
               )}
 
@@ -286,6 +305,8 @@ export default function BusinessDashboardPage() {
             </motion.div>
           </AnimatePresence>
         </div>
+        </>
+        )}
       </main>
 
       {/* PDF Export Modal */}
