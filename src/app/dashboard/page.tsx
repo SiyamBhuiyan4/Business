@@ -231,10 +231,10 @@ export default function DashboardOverviewPage() {
 
                     {/* Business Summary Stats */}
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-                      <div className="relative">{user?.role === 'SUPER_ADMIN' && <button type="button" onClick={() => openInvestmentModal(biz)} className="absolute right-2 top-2 z-10 p-1 text-[#A6633C]" title="Edit investment"><Pencil className="h-3 w-3" /></button>}<InvestmentMetric value={biz.investment || 0} /></div>
-                      <SalesMetric value={biz.todaySales || 0} />
-                      <OrdersMetric value={biz.pendingOrdersCount || 0} />
-                      <ProductsMetric value={biz.totalProductsCount || 0} />
+                      <div className="relative">{user?.role === 'SUPER_ADMIN' && <button type="button" onClick={() => openInvestmentModal(biz)} className="absolute right-2 top-2 z-10 p-1 text-[#A6633C]" title="Edit investment"><Pencil className="h-3 w-3" /></button>}<InvestmentMetric value={biz.investment || 0} businessId={biz.id} /></div>
+                      <SalesMetric value={biz.todaySales || 0} businessId={biz.id} />
+                      <OrdersMetric value={biz.pendingOrdersCount || 0} businessId={biz.id} />
+                      <ProductsMetric value={biz.totalProductsCount || 0} businessId={biz.id} />
                     </div>
                   </div>
 

@@ -261,7 +261,30 @@ html.dark .bg-emerald-500, html.dark .bg-teal-400, html.dark .bg-purple-500 { co
   .icon-matrix { position: absolute; right: 9px; bottom: 10px; display: grid; grid-template-columns: repeat(3, 18px); gap: 4px; }
   .icon-matrix span { display: grid; place-items: center; height: 18px; width: 18px; border: 1px solid rgba(26,83,92,.16); border-radius: 5px; color: #1A535C; background: rgba(255,255,255,.5); }
   .icon-matrix svg { height: 10px; width: 10px; }
+  .metric-popover {
+    position: absolute; left: 50%; bottom: calc(100% + 8px); z-index: 30; width: 190px;
+    transform: translateX(-50%); border-radius: 12px; padding: 10px 12px;
+    background: rgba(255,255,255,.98); border: 1px solid rgba(255,255,255,.95);
+    box-shadow: 0 14px 32px rgba(74,61,50,.22); backdrop-filter: blur(12px);
+    pointer-events: none;
+  }
+  .metric-popover::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 6px solid transparent; border-top-color: rgba(255,255,255,.98);
+  }
+  .metric-popover-list { display: flex; flex-direction: column; gap: 5px; color: #334155; }
+  .metric-popover-list b { font-weight: 800; color: #0F172A; white-space: nowrap; }
+  .metric-popover-more { font-size: 10px; color: #94A3B8; font-weight: 600; }
+  .metric-popover-empty, .metric-popover-loading { font-size: 11px; color: #64748B; text-align: center; padding: 4px 0; }
+  .metric-popover-summary { display: flex; justify-content: space-around; text-align: center; font-size: 11px; color: #334155; }
+  .metric-popover-summary b { display: block; font-size: 15px; color: #0F172A; }
 }
+html.dark .metric-popover { background: rgba(30,41,59,.98); border-color: rgba(255,255,255,.1); box-shadow: 0 14px 32px rgba(0,0,0,.4); }
+html.dark .metric-popover::after { border-top-color: rgba(30,41,59,.98); }
+html.dark .metric-popover-list { color: #CBD5E1; }
+html.dark .metric-popover-list b { color: #F8FAFC; }
+html.dark .metric-popover-summary { color: #CBD5E1; }
+html.dark .metric-popover-summary b { color: #F8FAFC; }
 
 @keyframes workspace-enter { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 

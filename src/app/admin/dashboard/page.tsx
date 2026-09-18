@@ -62,10 +62,10 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-                    <InvestmentMetric value={business.investment || 0} />
-                    <SalesMetric value={business.todaySales || 0} />
-                    <OrdersMetric value={business.pendingOrdersCount || 0} />
-                    <ProductsMetric value={business.totalProductsCount || 0} />
+                    <InvestmentMetric value={business.investment || 0} businessId={business.id} />
+                    <SalesMetric value={business.todaySales || 0} businessId={business.id} />
+                    <OrdersMetric value={business.pendingOrdersCount || 0} businessId={business.id} />
+                    <ProductsMetric value={business.totalProductsCount || 0} businessId={business.id} />
                   </div>
                 </div>
 
