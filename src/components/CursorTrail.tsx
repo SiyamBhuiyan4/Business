@@ -4,6 +4,10 @@ import { useEffect, useRef } from 'react';
 
 type TrailPoint = { x: number; y: number };
 
+const ORBIT_RADIUS = 13;
+const ORBIT_SPEED = 0.09;
+const TRAIL_LENGTH = 22;
+
 export default function CursorTrail() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -12,32 +16,44 @@ export default function CursorTrail() {
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const TRAIL_LENGTH = 22;
     const mouse = { x: -100, y: -100 };
-    const pos = { x: -100, y: -100 };
-    let points: TrailPoint[] = [];
-    let orbitAngle = 0;
+    const points: TrailPoint[] = [];
+    let angle = 0;
     let frame = 0;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+
     const resize = () => {
       const ratio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = window.innerWidth * ratio;
-      canvas.height = window.innerHeight * ratio;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     };
+
+    // Passive listener just records the latest raw pointer position -- no React state,
+    // no re-renders. All motion (orbit angle, trail, drawing) is driven entirely by the
+    // rAF loop below, decoupled from how often mousemove actually fires.
     const handleMove = (event: MouseEvent) => {
       mouse.x = event.clientX;
       mouse.y = event.clientY;
-      if (pos.x === -100) { pos.x = mouse.x; pos.y = mouse.y; }
     };
-    const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor;
+
     const render = () => {
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.clearRect(0, 0, width, height);
+
       if (mouse.x >= 0 && mouse.y >= 0) {
-        pos.x = lerp(pos.x, mouse.x, 0.25);
-        pos.y = lerp(pos.y, mouse.y, 0.25);
-        points.push({ x: pos.x, y: pos.y });
+        // Continuously orbit the dot around the actual cursor position -- the angle keeps
+        // advancing every frame regardless of whether the mouse is moving, so the dot
+        // keeps circling even while the cursor sits still.
+        angle += ORBIT_SPEED;
+        const dotX = mouse.x + ORBIT_RADIUS * Math.cos(angle);
+        const dotY = mouse.y + ORBIT_RADIUS * Math.sin(angle);
+
+        points.push({ x: dotX, y: dotY });
         if (points.length > TRAIL_LENGTH) points.shift();
 
         ctx.lineCap = 'round';
@@ -56,18 +72,11 @@ export default function CursorTrail() {
           ctx.stroke();
         }
 
-        orbitAngle += 0.09;
-        const orbitX = pos.x + 13 * Math.cos(orbitAngle);
-        const orbitY = pos.y + 13 * Math.sin(orbitAngle);
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 2.5, 0, Math.PI * 2);
+        ctx.arc(dotX, dotY, 2.5, 0, Math.PI * 2);
         ctx.fillStyle = '#0D9488';
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(orbitX, orbitY, 2, 0, Math.PI * 2);
-        ctx.fillStyle = '#D97706';
-        ctx.shadowColor = '#D97706';
-        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#0D9488';
+        ctx.shadowBlur = 6;
         ctx.fill();
         ctx.shadowBlur = 0;
       }
