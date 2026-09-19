@@ -84,18 +84,15 @@ body::before {
   @media (prefers-reduced-motion: reduce) { .mushroom-toggle-active { animation:none;box-shadow:0 0 10px rgba(255,71,87,.4); } }
 html.dark .mushroom-toggle { border-color:rgba(56,189,248,.22);background:rgba(15,23,42,.82);color:#F8FAFC; }
 html.dark .mushroom-toggle-active { color:#FF6B6B; }
-  .paper-card-wrap { position:relative; }
-  .paper-reset-btn {
-    position:absolute; top:14px; right:14px; z-index:5; display:inline-flex; align-items:center; gap:5px;
-    border:1px solid rgba(226,232,240,.9); background:rgba(255,255,255,.92); color:#475569;
-    font-size:11px; font-weight:700; padding:6px 11px; border-radius:999px; cursor:pointer;
-    box-shadow:0 4px 10px rgba(0,0,0,.08); backdrop-filter:blur(8px);
-    animation:paper-reset-in .2s ease both;
+  .cloth-card-wrap { position:relative; padding-top:6px; }
+  .cloth-card-content { cursor:grab; touch-action:none; }
+  .cloth-card-content.cloth-dragging { cursor:grabbing; }
+  .cloth-pin {
+    position:absolute; top:0; width:7px; height:7px; border-radius:999px;
+    background:rgba(200,138,88,.65); box-shadow:0 1px 3px rgba(0,0,0,.18);
+    transform:translateX(-50%); z-index:6; pointer-events:none;
   }
-  .paper-reset-btn:hover { color:#1A535C; border-color:rgba(26,83,92,.3); }
-  @keyframes paper-reset-in { from { opacity:0; transform:translateY(-4px) scale(.92); } to { opacity:1; transform:translateY(0) scale(1); } }
-html.dark .paper-reset-btn { background:rgba(30,41,59,.92); border-color:rgba(255,255,255,.1); color:#CBD5E1; }
-html.dark .paper-reset-btn:hover { color:#38BDF8; }
+html.dark .cloth-pin { background:rgba(99,102,241,.7); }
   .bulk-modal { border:1px solid rgba(255,255,255,.95);background:rgba(255,255,255,.88);box-shadow:0 24px 60px rgba(15,23,42,.2);backdrop-filter:blur(20px); }
   .bulk-dropzone { cursor:pointer;border:2px dashed rgba(200,138,88,.5);border-radius:18px;padding:32px;text-align:center;color:#475569;background:rgba(255,255,255,.55);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; }
   .bulk-dropzone.is-dragging,.bulk-dropzone:hover { transform:scale(1.02);border-color:#C88A58;box-shadow:0 0 22px rgba(200,138,88,.2); }

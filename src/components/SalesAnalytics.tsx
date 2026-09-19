@@ -24,7 +24,7 @@ import { Calendar, TrendingUp, ShoppingBag, DollarSign, RefreshCw, Wallet, Penci
 import { formatCurrency } from '@/lib/utils';
 import { format, subDays } from 'date-fns';
 import TiltCard from '@/components/TiltCard';
-import PaperCard from '@/components/motion/PaperCard';
+import ClothCard from '@/components/motion/ClothCard';
 
 interface SalesAnalyticsProps {
   businessId: string;
@@ -297,7 +297,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
       {/* Main Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Line / Bar Chart (Revenue Over Time) */}
-        <PaperCard wrapperClassName="lg:col-span-2" className="analytics-glass p-5 rounded-2xl flex flex-col justify-between">
+        <ClothCard wrapperClassName="lg:col-span-2" className="analytics-glass p-5 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-[#0F172A]">Revenue & Order Volume Over Time</h3>
@@ -337,10 +337,10 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
               </div>
             )}
           </div>
-        </PaperCard>
+        </ClothCard>
 
         {/* Pie Chart (Sales Breakdown by Product) */}
-        <PaperCard className="analytics-glass p-5 rounded-2xl flex flex-col justify-between">
+        <ClothCard className="analytics-glass p-5 rounded-2xl flex flex-col justify-between">
           <div>
             <h3 className="text-base font-bold text-[#0F172A]">Product Sales Breakdown</h3>
             <p className="text-xs text-[#64748B]">Revenue split across products</p>
@@ -381,7 +381,7 @@ export default function SalesAnalytics({ businessId, investment = 0, canManageIn
               <div className="text-slate-500 text-sm">No product data for selected range</div>
             )}
           </div>
-        </PaperCard>
+        </ClothCard>
       </div>
     </div>
   );
