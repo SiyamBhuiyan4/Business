@@ -16,15 +16,15 @@ const BUMP_W = 72;
 const BUMP_H = 50;
 const PUSH_INTERVAL_MS = 40; // ~25fps for the bump-map encode -- smooth for cloth, cheap on CPU
 
-const WIND_COLOR_SCALE = 6;
-const PULL_COLOR_SCALE = 6;
-const PULL_UNIT_SCALE = 130; // raw drag-delta sensitivity (bump units per fractional-drag unit)
+const WIND_COLOR_SCALE = 10;
+const PULL_COLOR_SCALE = 11;
+const PULL_UNIT_SCALE = 240; // raw drag-delta sensitivity (bump units per fractional-drag unit) -- a real, modest mouse drag is much shorter than a synthetic test drag, so this has to react strongly to small movements
 const SPRING_STIFFNESS = 0.14;
 const SPRING_DAMPING = 0.76;
 
 const IMPULSE_DURATION_S = 1.1;
 const RIPPLE_SPEED = 1.4; // fractional-units/sec the ring expands
-const IMPULSE_AMP = 58;
+const IMPULSE_AMP = 95;
 const MAX_IMPULSES = 4;
 
 // A feImage with no source on its very first paint gets resolved by some browsers as an
@@ -101,13 +101,16 @@ export default function ClothCard({
         for (let x = 0; x < BUMP_W; x++) {
           const u = x / (BUMP_W - 1);
 
-          // Layered traveling waves (not one flat sine) for an organic flag-like ripple, plus a
-          // slow "gust" intensity so the wind never feels perfectly mechanical/periodic.
-          let dx = Math.sin(u * 7.5 + t * 2.1 - v * 3.2) * 6.5 * gust
-                 + Math.sin(u * 2.6 - t * 0.85 + v * 1.1) * 4.0 * gust
-                 + Math.sin(u * 15 + t * 4.3) * 1.6 * gust * pin;
-          let dy = Math.sin(u * 4.5 + t * 1.5 + v * 2.0) * 2.2 * gust
-                 + Math.sin(u * 9 - t * 2.6) * 0.8 * gust * pin;
+          // Layered traveling waves at irrational frequency/speed ratios (not one flat sine, and
+          // never two waves that stay in lockstep) for an organic flag-like ripple, plus a slow
+          // "gust" intensity so the wind never feels perfectly mechanical/periodic.
+          let dx = Math.sin(u * 7.5 + t * 2.1 - v * 3.2) * 10 * gust
+                 + Math.sin(u * 2.6 - t * 0.85 + v * 1.1) * 6.5 * gust
+                 + Math.sin(u * 15 + t * 4.3) * 2.8 * gust * pin
+                 + Math.sin(u * 23.7 - t * 6.1 + v * 5.3) * 1.4 * gust * pin;
+          let dy = Math.sin(u * 4.5 + t * 1.5 + v * 2.0) * 3.6 * gust
+                 + Math.sin(u * 9 - t * 2.6) * 1.6 * gust * pin
+                 + Math.sin(u * 17.3 + t * 3.7 - v * 4.1) * 0.9 * gust * pin;
           dx *= pin;
           dy *= pin;
 
@@ -223,7 +226,7 @@ export default function ClothCard({
         <defs>
           <filter id={filterId} x="-25%" y="-25%" width="150%" height="150%">
             <feImage ref={bumpImageRef} xlinkHref={NEUTRAL_BUMP_PLACEHOLDER} result="bumpmap" />
-            <feDisplacementMap in="SourceGraphic" in2="bumpmap" scale={42} xChannelSelector="R" yChannelSelector="G" />
+            <feDisplacementMap in="SourceGraphic" in2="bumpmap" scale={62} xChannelSelector="R" yChannelSelector="G" />
           </filter>
         </defs>
       </svg>
