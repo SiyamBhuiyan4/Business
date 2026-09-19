@@ -5,11 +5,12 @@ import React, { useEffect, useId, useRef } from 'react';
 /**
  * Wraps a card so it behaves like a curtain: pinned along the top edge, gently swaying on
  * the other 3 sides in a continuous ambient "breeze" (layered traveling waves + a slow gust
- * modulation, not a single flat sine, for an organic flag-like ripple), and interactive two
- * ways -- a tap sends an expanding ring ripple out from that point (like a stone dropped in
- * water), and a drag bends the content toward the pointer, both via a real SVG
- * feDisplacementMap driven by a small offscreen canvas bump map. Everything eases back to the
- * idle sway on release via a damped spring, the way real fabric settles -- no reset needed.
+ * modulation, not a single flat sine, for an organic flag-like ripple), and disturbed purely
+ * by hovering -- no click or press needed at all, matching the rest of this app's hover-only
+ * interactions. Just moving the cursor over the card spawns a trail of ripples that follow
+ * it, the way waving a hand just above fabric stirs it without ever touching it -- faster
+ * motion pushes harder. Everything eases back to the idle sway on its own via each ripple's
+ * own decay, the way real fabric settles.
  */
 
 const BUMP_W = 72;
@@ -17,15 +18,23 @@ const BUMP_H = 50;
 const PUSH_INTERVAL_MS = 40; // ~25fps for the bump-map encode -- smooth for cloth, cheap on CPU
 
 const WIND_COLOR_SCALE = 10;
-const PULL_COLOR_SCALE = 11;
-const PULL_UNIT_SCALE = 240; // raw drag-delta sensitivity (bump units per fractional-drag unit) -- a real, modest mouse drag is much shorter than a synthetic test drag, so this has to react strongly to small movements
-const SPRING_STIFFNESS = 0.14;
-const SPRING_DAMPING = 0.76;
 
-const IMPULSE_DURATION_S = 1.1;
+const IMPULSE_DURATION_S = 1;
 const RIPPLE_SPEED = 1.4; // fractional-units/sec the ring expands
-const IMPULSE_AMP = 95;
-const MAX_IMPULSES = 4;
+const IMPULSE_AMP = 150;
+const MAX_IMPULSES = 10; // a continuous hover trail needs more overlapping ripples than a single tap did
+const RADIAL_WEIGHT = 0.35; // outward "ring" component of each ripple
+const DIRECTIONAL_WEIGHT = 1.1; // forward "push" component along the hover's direction of travel --
+// dominant on purpose, so a sweep of overlapping ripples reinforces into one coherent wave
+// instead of adjacent radial rings partly cancelling each other out.
+
+// Hover-driven spawning: a new ripple is added as the cursor moves, strength scaled by how
+// fast it's moving -- a slow drift barely stirs the cloth, a fast swipe pushes it hard.
+const HOVER_SPAWN_THROTTLE_MS = 30;
+const MIN_HOVER_SPEED = 0.0006; // fractional-units per ms -- filters out sub-pixel jitter
+const SPEED_TO_STRENGTH = 240;
+const MIN_STRENGTH = 0.45;
+const MAX_STRENGTH = 2.2;
 
 // A feImage with no source on its very first paint gets resolved by some browsers as an
 // invalid filter input -- and the whole referencing filter then never applies at all, even
@@ -38,6 +47,10 @@ interface Impulse {
   u: number;
   v: number;
   start: number;
+  strength: number;
+  /** Normalized direction the cursor was moving when this ripple spawned. */
+  dirU: number;
+  dirV: number;
 }
 
 export default function ClothCard({
@@ -59,11 +72,9 @@ export default function ClothCard({
 
   // All interaction/animation state lives in refs, never React state -- the wind sway runs
   // every frame for as long as this card is mounted and must never cause a re-render.
-  const draggingRef = useRef(false);
-  const startRef = useRef({ u: 0.5, v: 0.5 });
-  const pullRef = useRef({ u: 0.5, v: 0.5, dx: 0, dy: 0 });
-  const velRef = useRef({ x: 0, y: 0 });
   const impulsesRef = useRef<Impulse[]>([]);
+  const lastHoverRef = useRef<{ u: number; v: number; t: number } | null>(null);
+  const lastSpawnRef = useRef(0);
   const rafRef = useRef<number | null>(null);
   const lastPushRef = useRef(0);
   const gustSeedRef = useRef(0);
@@ -88,7 +99,6 @@ export default function ClothCard({
       }
       const t = now / 1000;
       const gust = 0.65 + 0.35 * Math.sin(t * 0.18 + gustSeedRef.current) + 0.15 * Math.sin(t * 0.41 + gustSeedRef.current * 2);
-      const pull = pullRef.current;
 
       impulsesRef.current = impulsesRef.current.filter((im) => t - im.start < IMPULSE_DURATION_S);
       const impulses = impulsesRef.current;
@@ -114,54 +124,30 @@ export default function ClothCard({
           dx *= pin;
           dy *= pin;
 
-          // Expanding ring ripple(s) from taps -- like a stone dropped in water / a poke in
-          // fabric, independent of whether the pointer is actively dragging.
+          // Each point the cursor passed over stays disturbed for a moment and fades in place --
+          // a static Gaussian blob, not an expanding ring -- so a hover trail builds up into one
+          // continuous, coherent stir along the whole recent path instead of a series of thin
+          // rings that only brush past each pixel for an instant.
           for (const im of impulses) {
             const age = t - im.start;
-            const decay = 1 - age / IMPULSE_DURATION_S;
-            const ringR = age * RIPPLE_SPEED;
+            const decay = Math.max(0, 1 - age / IMPULSE_DURATION_S);
             const ddx = u - im.u;
             const ddy = v - im.v;
-            const dist = Math.sqrt(ddx * ddx + ddy * ddy) || 0.0001;
-            const ringWidth = 0.16;
-            const ringFactor = Math.exp(-((dist - ringR) ** 2) / (2 * ringWidth * ringWidth));
-            const amp = IMPULSE_AMP * decay * ringFactor * pin;
-            dx += (ddx / dist) * amp;
-            dy += (ddy / dist) * amp;
-          }
-
-          // Active drag pull -- bends toward the pointer, softened near the pinned top.
-          let pullDx = 0;
-          let pullDy = 0;
-          if (pull.dx !== 0 || pull.dy !== 0) {
-            const ddx = u - pull.u;
-            const ddy = v - pull.v;
-            const dist = Math.sqrt(ddx * ddx + ddy * ddy);
-            const falloff = Math.max(0, 1 - dist / 0.7) ** 1.2;
-            pullDx = pull.dx * falloff * pin;
-            pullDy = pull.dy * falloff * pin;
+            const distSq = ddx * ddx + ddy * ddy;
+            const dist = Math.sqrt(distSq) || 0.0001;
+            const blobRadius = 0.22;
+            const falloff = Math.exp(-distSq / (2 * blobRadius * blobRadius));
+            const amp = IMPULSE_AMP * im.strength * decay * falloff * pin;
+            dx += ((ddx / dist) * RADIAL_WEIGHT + im.dirU * DIRECTIONAL_WEIGHT) * amp;
+            dy += ((ddy / dist) * RADIAL_WEIGHT + im.dirV * DIRECTIONAL_WEIGHT) * amp;
           }
 
           const idx = (y * BUMP_W + x) * 4;
-          img.data[idx] = Math.max(0, Math.min(255, 128 + dx * WIND_COLOR_SCALE + pullDx * PULL_COLOR_SCALE));
-          img.data[idx + 1] = Math.max(0, Math.min(255, 128 + dy * WIND_COLOR_SCALE + pullDy * PULL_COLOR_SCALE));
+          img.data[idx] = Math.max(0, Math.min(255, 128 + dx * WIND_COLOR_SCALE));
+          img.data[idx + 1] = Math.max(0, Math.min(255, 128 + dy * WIND_COLOR_SCALE));
           img.data[idx + 2] = 128;
           img.data[idx + 3] = 255;
         }
-      }
-
-      // Once released, ease the pull back to zero with a damped spring instead of an instant
-      // snap -- the cloth "settles" the way real fabric does rather than teleporting flat.
-      if (!draggingRef.current && (Math.abs(pull.dx) > 0.001 || Math.abs(pull.dy) > 0.001 || Math.abs(velRef.current.x) > 0.001 || Math.abs(velRef.current.y) > 0.001)) {
-        const vel = velRef.current;
-        vel.x += (0 - pull.dx) * SPRING_STIFFNESS;
-        vel.x *= SPRING_DAMPING;
-        pull.dx += vel.x;
-        vel.y += (0 - pull.dy) * SPRING_STIFFNESS;
-        vel.y *= SPRING_DAMPING;
-        pull.dy += vel.y;
-        if (Math.abs(pull.dx) < 0.001 && Math.abs(vel.x) < 0.001) { pull.dx = 0; vel.x = 0; }
-        if (Math.abs(pull.dy) < 0.001 && Math.abs(vel.y) < 0.001) { pull.dy = 0; vel.y = 0; }
       }
 
       if (now - lastPushRef.current > PUSH_INTERVAL_MS) {
@@ -183,38 +169,35 @@ export default function ClothCard({
     return { u: (clientX - rect.left) / rect.width, v: (clientY - rect.top) / rect.height };
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    const el = contentRef.current;
-    if (!el) return;
-    const { u, v } = toFraction(e.clientX, e.clientY);
-
-    // Set up drag/impulse state FIRST -- setPointerCapture can throw (invalid pointer id,
-    // certain input devices/browsers), and if that happens before this, the rest of the
-    // handler silently never runs and the card stops reacting to input at all.
-    draggingRef.current = true;
-    startRef.current = { u, v };
-    pullRef.current = { u, v, dx: 0, dy: 0 };
-    impulsesRef.current = [...impulsesRef.current.slice(-(MAX_IMPULSES - 1)), { u, v, start: performance.now() / 1000 }];
-    el.classList.add('cloth-dragging');
-
-    try {
-      el.setPointerCapture(e.pointerId);
-    } catch {
-      // Non-essential -- dragging still works via window-level pointermove/up below.
-    }
-  };
-
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
     const { u, v } = toFraction(e.clientX, e.clientY);
-    const start = startRef.current;
-    pullRef.current.dx = (u - start.u) * PULL_UNIT_SCALE;
-    pullRef.current.dy = (v - start.v) * PULL_UNIT_SCALE;
+    const now = performance.now();
+    const last = lastHoverRef.current;
+
+    if (last) {
+      const dt = now - last.t;
+      if (dt > 4) {
+        const du = u - last.u;
+        const dv = v - last.v;
+        const dist = Math.sqrt(du * du + dv * dv);
+        const speed = dist / dt;
+        if (speed > MIN_HOVER_SPEED && now - lastSpawnRef.current > HOVER_SPAWN_THROTTLE_MS) {
+          lastSpawnRef.current = now;
+          const strength = Math.max(MIN_STRENGTH, Math.min(MAX_STRENGTH, speed * SPEED_TO_STRENGTH));
+          impulsesRef.current = [
+            ...impulsesRef.current.slice(-(MAX_IMPULSES - 1)),
+            { u, v, start: now / 1000, strength, dirU: du / dist, dirV: dv / dist },
+          ];
+        }
+      }
+    }
+    lastHoverRef.current = { u, v, t: now };
   };
 
-  const endDrag = () => {
-    draggingRef.current = false;
-    contentRef.current?.classList.remove('cloth-dragging');
+  const handlePointerLeave = () => {
+    // Avoid a fake huge-speed spike (and an oversized ripple) the next time the cursor enters
+    // from a completely different spot.
+    lastHoverRef.current = null;
   };
 
   return (
@@ -234,10 +217,8 @@ export default function ClothCard({
         ref={contentRef}
         className={`cloth-card-content ${className}`}
         style={{ filter: `url(#${filterId})` }}
-        onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
+        onPointerLeave={handlePointerLeave}
       >
         {children}
       </div>

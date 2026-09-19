@@ -85,8 +85,7 @@ body::before {
 html.dark .mushroom-toggle { border-color:rgba(56,189,248,.22);background:rgba(15,23,42,.82);color:#F8FAFC; }
 html.dark .mushroom-toggle-active { color:#FF6B6B; }
   .cloth-card-wrap { position:relative; padding-top:6px; }
-  .cloth-card-content { cursor:grab; touch-action:none; }
-  .cloth-card-content.cloth-dragging { cursor:grabbing; }
+  .cloth-card-content { touch-action:none; }
   .cloth-pin {
     position:absolute; top:0; width:7px; height:7px; border-radius:999px;
     background:rgba(200,138,88,.65); box-shadow:0 1px 3px rgba(0,0,0,.18);
