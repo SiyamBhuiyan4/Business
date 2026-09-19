@@ -84,6 +84,18 @@ body::before {
   @media (prefers-reduced-motion: reduce) { .mushroom-toggle-active { animation:none;box-shadow:0 0 10px rgba(255,71,87,.4); } }
 html.dark .mushroom-toggle { border-color:rgba(56,189,248,.22);background:rgba(15,23,42,.82);color:#F8FAFC; }
 html.dark .mushroom-toggle-active { color:#FF6B6B; }
+  .paper-card-wrap { position:relative; }
+  .paper-reset-btn {
+    position:absolute; top:14px; right:14px; z-index:5; display:inline-flex; align-items:center; gap:5px;
+    border:1px solid rgba(226,232,240,.9); background:rgba(255,255,255,.92); color:#475569;
+    font-size:11px; font-weight:700; padding:6px 11px; border-radius:999px; cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,.08); backdrop-filter:blur(8px);
+    animation:paper-reset-in .2s ease both;
+  }
+  .paper-reset-btn:hover { color:#1A535C; border-color:rgba(26,83,92,.3); }
+  @keyframes paper-reset-in { from { opacity:0; transform:translateY(-4px) scale(.92); } to { opacity:1; transform:translateY(0) scale(1); } }
+html.dark .paper-reset-btn { background:rgba(30,41,59,.92); border-color:rgba(255,255,255,.1); color:#CBD5E1; }
+html.dark .paper-reset-btn:hover { color:#38BDF8; }
   .bulk-modal { border:1px solid rgba(255,255,255,.95);background:rgba(255,255,255,.88);box-shadow:0 24px 60px rgba(15,23,42,.2);backdrop-filter:blur(20px); }
   .bulk-dropzone { cursor:pointer;border:2px dashed rgba(200,138,88,.5);border-radius:18px;padding:32px;text-align:center;color:#475569;background:rgba(255,255,255,.55);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; }
   .bulk-dropzone.is-dragging,.bulk-dropzone:hover { transform:scale(1.02);border-color:#C88A58;box-shadow:0 0 22px rgba(200,138,88,.2); }
@@ -219,7 +231,10 @@ html.dark .bg-emerald-500, html.dark .bg-teal-400, html.dark .bg-purple-500 { co
   .navbar-dropdown-item:hover { background: rgba(26,83,92,.08); color: #1A535C; }
   .navbar-dropdown-active { background: rgba(26,83,92,.1); color: #1A535C; }
   .navbar-dropdown .border-t { border-color: rgba(226,232,240,.85) !important; }
-  .heatmap-tile { min-height: 116px; border: 1px solid rgba(226,232,240,.9); backdrop-filter: blur(12px); box-shadow: inset 0 1px 2px rgba(255,255,255,.8), 0 8px 18px rgba(120,100,80,.06); color: #0F172A; }
+  /* No backdrop-filter here -- every heatmap-tile already sits inside an .analytics-glass
+     wrapper that's blurred once; blurring each of the ~35 tiles again individually was
+     pure redundant compositing cost for the same visual result. */
+  .heatmap-tile { min-height: 116px; border: 1px solid rgba(226,232,240,.9); box-shadow: inset 0 1px 2px rgba(255,255,255,.8), 0 8px 18px rgba(120,100,80,.06); color: #0F172A; }
   .heatmap-zero { background: rgba(255,255,255,.7); }
   .heatmap-low { background: rgba(204,251,241,.85); border-color: #0D9488; }
   .heatmap-medium { background: rgba(167,243,208,.9); border-color: #059669; }
@@ -231,7 +246,10 @@ html.dark .bg-emerald-500, html.dark .bg-teal-400, html.dark .bg-purple-500 { co
   .heatmap-value { color: #0F172A; font-size: 13px; font-weight: 700; }
   .heatmap-revenue { color: #0F172A; font-size: 12px; font-weight: 700; }
   .heatmap-fire { color: #fff; background: #D97706; box-shadow: 0 0 12px rgba(217,119,6,.6); animation: flame-flicker 1.15s ease-in-out infinite; }
-  .metric-tile { position: relative; min-height: 126px; overflow: hidden; border: 1px solid rgba(255,255,255,.92); border-radius: 16px; padding: 16px; background: rgba(255,255,255,.55); box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 9px 22px rgba(120,100,80,.08); backdrop-filter: blur(16px); }
+  /* No backdrop-filter here -- every metric-tile sits inside an already-blurred .glass-panel
+     card, and these render 4-per-business-card across every workspace overview, so a second
+     blur per tile was redundant compositing cost with no visible difference. */
+  .metric-tile { position: relative; min-height: 126px; overflow: hidden; border: 1px solid rgba(255,255,255,.92); border-radius: 16px; padding: 16px; background: rgba(255,255,255,.55); box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 9px 22px rgba(120,100,80,.08); }
   .workspace-card { animation: workspace-enter .65s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--stagger, 0ms); }
   .metric-tile { transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease, border-color .28s ease; }
   .metric-tile:hover { transform: translateY(-4px) scale(1.015); border-color: rgba(200,138,88,.55); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 16px 30px rgba(120,100,80,.14); }

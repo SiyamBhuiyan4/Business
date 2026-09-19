@@ -445,8 +445,12 @@ export class FruitSliceEngine {
       }
     }
 
-    // fruit physics
-    for (const fruit of [...this.fruits]) {
+    // fruit physics -- iterate backwards + splice in place so a 60fps loop never has to
+    // copy the array (the old `[...this.fruits]` + `.filter()` pattern allocated two new
+    // arrays per removal, every frame, forever -- a steady stream of garbage that shows up
+    // as periodic GC micro-stutter).
+    for (let i = this.fruits.length - 1; i >= 0; i--) {
+      const fruit = this.fruits[i];
       fruit.vy += GRAVITY * dt;
       fruit.view.x += fruit.vx * dt;
       fruit.view.y += fruit.vy * dt;
@@ -457,12 +461,13 @@ export class FruitSliceEngine {
       if (offscreen) {
         this.fruitLayer.removeChild(fruit.view);
         fruit.view.destroy({ children: true });
-        this.fruits = this.fruits.filter((f) => f !== fruit);
+        this.fruits.splice(i, 1);
       }
     }
 
-    // particles
-    for (const p of [...this.particles]) {
+    // particles -- same in-place splice treatment as fruits above.
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
       p.life += dtMs;
       p.vy += GRAVITY * 0.5 * dt;
       p.view.x += p.vx * dt;
@@ -473,13 +478,14 @@ export class FruitSliceEngine {
       if (p.life >= p.maxLife) {
         this.particleLayer.removeChild(p.view);
         p.view.destroy({ children: true });
-        this.particles = this.particles.filter((x) => x !== p);
+        this.particles.splice(i, 1);
       }
     }
 
-    // trail
+    // trail -- points are pushed in chronological order, so expired ones are always at the
+    // front; shift them off in place instead of allocating a new array every frame.
     const now = performance.now();
-    this.trail = this.trail.filter((pt) => now - pt.t < TRAIL_MAX_AGE_MS);
+    while (this.trail.length && now - this.trail[0].t >= TRAIL_MAX_AGE_MS) this.trail.shift();
     this.drawTrail();
   };
 

@@ -188,7 +188,11 @@ export default function FruitNinjaGame() {
 
     window.addEventListener('resize', refresh);
     window.addEventListener('scroll', refresh, { passive: true, capture: true });
-    const interval = window.setInterval(refresh, 1000);
+    // A slow fallback poll for DOM changes that don't fire resize/scroll (data loading,
+    // tab switches). 2.5s instead of 1s -- this queries every excluded selector and reads
+    // layout for each match, so halving the frequency meaningfully cuts a background cost
+    // that runs on every page, forever, for a purely decorative feature.
+    const interval = window.setInterval(refresh, 2500);
 
     return () => {
       cancelAnimationFrame(raf);
